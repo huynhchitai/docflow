@@ -13,7 +13,7 @@
 |---|---|---|
 | Claude Code (Claude Fable 5) | Sinh toàn bộ code: scaffold, Worker API, UI, demo data, kiến trúc | Session files `~/.claude/projects/-Users-huynhtai-Developer-*` (ZIP nộp kèm) |
 | Google Gemini 2.5 Flash/Pro | Lõi trích xuất chứng từ trong sản phẩm (runtime) | Prompt trong `worker/index.ts` |
-| PyTorch (fine-tune tại sự kiện) | Model phân loại chứng từ, train trên FPT AI Factory | `training/` (sẽ thêm) |
+| PyTorch (fine-tune tại sự kiện) | Model phân loại chứng từ, serve trên Google Cloud Run | `training/` (sẽ thêm) |
 
 ## Nhật ký phiên làm việc
 

@@ -12,7 +12,7 @@
 │  POST /api/dossiers            tạo bộ hồ sơ                          │
 │  POST /api/dossiers/:id/files  upload → Supabase Storage             │
 │  Pipeline mỗi file:                                                  │
-│   1. classify  → FPT AI Factory svc (PyTorch)  {doc_type, conf}      │
+│   1. classify  → Cloud Run svc (PyTorch)  {doc_type, conf}      │
 │   2. extract   → Gemini Flash (schema theo doc_type, box_2d 0–1000)  │
 │      conf thấp / viết tay / mộc đè → escalate Gemini Pro             │
 │   3. verify    → FPT svc PaddleOCR: value khớp text tại bbox?        │
@@ -23,8 +23,8 @@
 │  POST /api/ask                 RAG pgvector, trả lời kèm trích dẫn   │
 └───────┬───────────────────┬───────────────────┬─────────────────────┘
         ▼                   ▼                   ▼
-  Supabase            FPT AI Factory       Google Gemini
-  Postgres+pgvector   FastAPI (GPU):       Flash (mặc định)
+  Supabase            Google Cloud Run     Google Gemini
+  Postgres+pgvector   FastAPI:             Flash (mặc định)
   Storage (scan)      - PyTorch classifier Pro (escalation)
                       - YOLO mộc/chữ ký(*)
                       - PaddleOCR verify
@@ -58,7 +58,7 @@
 | sáng | Cross-check engine + review queue UI (demo bắt CCCD lệch) | Tài |
 | sáng | Polish viewer + empty states + loading | Triết |
 | trưa | Onboard 2 bạn mới: 1 nhận PyTorch, 1 nhận data/pitch | — |
-| chiều | PyTorch classifier: sinh data augmented từ demo docs (xoay/mờ/nhiễu, vài trăm ảnh) → fine-tune ResNet18/LayoutLM-lite → serve FastAPI trên **FPT AI Factory** (ghé booth FPT lấy credits + hướng dẫn) | bạn C |
+| chiều | PyTorch classifier: sinh data augmented từ demo docs (xoay/mờ/nhiễu, vài trăm ảnh) → fine-tune ResNet18/LayoutLM-lite → serve FastAPI trên **Google Cloud Run** (train local/Colab, ResNet18 CPU inference đủ nhanh) | bạn C |
 | chiều | Bộ test 20–30 case + đo % field đúng, chi phí/bộ hồ sơ; draft deck | bạn D |
 | chiều | API core-banking mock + audit log + auth key | Tài |
 | 19–21h | Tích hợp classifier vào pipeline; verify OCR nếu kịp | Tài + C |
@@ -77,5 +77,5 @@
 1. Extraction thật + viewer highlight (linh hồn demo)
 2. Cross-check CCCD (khác biệt duy nhất không đội nào có)
 3. Dashboard + export core-banking (deliverables SHB)
-4. PyTorch classifier trên FPT (2 giải phụ)
+4. PyTorch classifier trên Cloud Run (META Award 130tr tiền mặt)
 5. RAG Q&A, YOLO mộc đỏ (chỉ làm khi mọi thứ trên xong)
