@@ -12,10 +12,10 @@
 │  POST /api/dossiers            tạo bộ hồ sơ                          │
 │  POST /api/dossiers/:id/files  upload → Supabase Storage             │
 │  Pipeline mỗi file:                                                  │
-│   1. classify  → Cloud Run svc (PyTorch)  {doc_type, conf}      │
+│   1. classify  → Cloud Run svc (PyTorch)  {doc_type, conf}          │
 │   2. extract   → Gemini Flash (schema theo doc_type, box_2d 0–1000)  │
 │      conf thấp / viết tay / mộc đè → escalate Gemini Pro             │
-│   3. verify    → FPT svc PaddleOCR: value khớp text tại bbox?        │
+│   3. verify    → Cloud Run PaddleOCR: value khớp text tại bbox?      │
 │   4. crosscheck→ rule TS: CCCD/tên/số tiền/kỳ hạn giữa các chứng từ  │
 │   5. persist   → Supabase Postgres (fields + bbox + conf + audit)    │
 │  PATCH /api/fields/:id         human review sửa tay (audit log)      │
@@ -23,9 +23,9 @@
 │  POST /api/ask                 RAG pgvector, trả lời kèm trích dẫn   │
 └───────┬───────────────────┬───────────────────┬─────────────────────┘
         ▼                   ▼                   ▼
-  Supabase            Google Cloud Run     Google Gemini
-  Postgres+pgvector   FastAPI:             Flash (mặc định)
-  Storage (scan)      - PyTorch classifier Pro (escalation)
+  Supabase            Google Cloud Run     Vertex AI (SA + IAM)
+  Postgres+pgvector   FastAPI:             Gemini Flash (mặc định)
+  Storage (scan)      - PyTorch classifier Gemini Pro (escalation)
                       - YOLO mộc/chữ ký(*)
                       - PaddleOCR verify
 (*) stretch goal
@@ -38,14 +38,14 @@
 - ✅ demo-data/: đơn vay, BCTC, hợp đồng (CCCD lệch cài sẵn), MT103
 - ✅ CP1 draft đã lưu trên hub (chưa bấm Nộp)
 - ⬜ GitHub repo public (lead chạy `gh repo create`)
-- ⬜ GEMINI_API_KEY (`npx wrangler secret put GEMINI_API_KEY`)
+- ⬜ Vertex AI: tạo service account (role Vertex AI User, bật API aiplatform) → `npx wrangler secret put GCP_SERVICE_ACCOUNT_KEY` (dán nguyên JSON). Fallback: `GEMINI_API_KEY` (AI Studio)
 
 ## Roadmap theo giờ
 
 ### Fri tối (m + Triết — 2 người)
 | Giờ | Việc | Ai |
 |---|---|---|
-| 17–18h | Gemini key + secret + extraction thật chạy trên 4 file demo, chỉnh prompt tới khi field đúng ổn định | Tài |
+| 17–18h | Vertex SA + secret + extraction thật chạy trên 4 file demo, chỉnh prompt tới khi field đúng ổn định | Tài |
 | 17–18h | In 4 PDF demo → chụp/scan nghiêng, mờ, bóng tay → demo-data/scans/ | Triết |
 | 18–21h | Supabase schema (dossiers, documents, fields, audit_log) + Storage; luồng upload → extract → persist | Tài |
 | 18–21h | Doc Viewer v1: render trang (pdf.js) + overlay bbox từ box_2d, click field → highlight | Triết |

@@ -1,7 +1,7 @@
 import { Hono } from 'hono'
+import { generateContent, type GeminiEnv } from './gemini'
 
-type Env = {
-  GEMINI_API_KEY?: string
+type Env = GeminiEnv & {
   SUPABASE_URL?: string
   SUPABASE_SECRET_KEY?: string
 }
@@ -59,8 +59,8 @@ app.post('/api/extract', async (c) => {
     return c.json({ error: 'Thiếu file — gửi multipart/form-data với field "file".' }, 400)
   }
 
-  const { GEMINI_API_KEY } = c.env
-  if (!GEMINI_API_KEY) {
+  const hasCreds = Boolean(c.env.GCP_SERVICE_ACCOUNT_KEY || c.env.GEMINI_API_KEY)
+  if (!hasCreds) {
     // Chưa cấu hình key → trả kết quả mẫu để UI/pipeline test được end-to-end
     const mock: ExtractResult = {
       mode: 'mock',
@@ -89,41 +89,17 @@ app.post('/api/extract', async (c) => {
   }
   const b64 = btoa(binary)
 
-  const model = 'gemini-2.5-flash'
-  const resp = await fetch(
-    `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`,
-    {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-goog-api-key': GEMINI_API_KEY,
-      },
-      body: JSON.stringify({
-        contents: [
-          {
-            parts: [
-              { inline_data: { mime_type: file.type || 'application/pdf', data: b64 } },
-              { text: EXTRACTION_PROMPT },
-            ],
-          },
-        ],
-        generationConfig: {
-          response_mime_type: 'application/json',
-          temperature: 0.1,
-        },
-      }),
-    },
-  )
-
-  if (!resp.ok) {
-    const detail = await resp.text()
-    return c.json({ error: 'Gemini API error', status: resp.status, detail }, 502)
+  let text: string
+  try {
+    text = await generateContent(c.env, {
+      model: 'gemini-2.5-flash',
+      mimeType: file.type || 'application/pdf',
+      dataB64: b64,
+      prompt: EXTRACTION_PROMPT,
+    })
+  } catch (e) {
+    return c.json({ error: 'Gemini API error', detail: e instanceof Error ? e.message : String(e) }, 502)
   }
-
-  const data = (await resp.json()) as {
-    candidates?: { content?: { parts?: { text?: string }[] } }[]
-  }
-  const text = data.candidates?.[0]?.content?.parts?.[0]?.text ?? '{}'
 
   let parsed: Partial<ExtractResult>
   try {
