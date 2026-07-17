@@ -73,6 +73,7 @@ function App() {
   return (
     <main className="shell">
       <header>
+        <div className="mark" aria-hidden="true" />
         <h1>
           Doc<span>Flow</span>
         </h1>

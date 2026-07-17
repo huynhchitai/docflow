@@ -4,7 +4,7 @@
 
 body {
   margin: 0;
-  background: #0b1020;
+  background: #0A152B;
   color: #e8ecf5;
   font-family: system-ui, 'Segoe UI', Roboto, sans-serif;
 }
@@ -15,14 +15,26 @@ body {
   padding: 40px 20px 60px;
 }
 
+.mark {
+  width: 34px;
+  height: 34px;
+  background: linear-gradient(135deg, #F58220, #E85D04);
+  border-radius: 50% 10px 50% 10px; /* trời tròn - đất vuông */
+  display: inline-block;
+  vertical-align: middle;
+  margin-right: 12px;
+}
+
 header h1 {
+  display: inline-block;
+  vertical-align: middle;
   font-size: 2.4rem;
   margin: 0;
   letter-spacing: -0.5px;
 }
 
 header h1 span {
-  color: #5b9cff;
+  color: #F58220;
 }
 
 .tagline {
@@ -32,19 +44,19 @@ header h1 span {
 
 .dropzone {
   margin-top: 28px;
-  border: 2px dashed #33415e;
+  border: 2px dashed #2A3B5E;
   border-radius: 14px;
   padding: 48px 20px;
   text-align: center;
   cursor: pointer;
   transition: border-color 0.15s, background 0.15s;
-  background: #0e1530;
+  background: #0F1D38;
 }
 
 .dropzone.over,
 .dropzone:hover {
-  border-color: #5b9cff;
-  background: #101a3d;
+  border-color: #F58220;
+  background: #14244A;
 }
 
 .dropzone.busy {
@@ -105,8 +117,8 @@ header h1 span {
 }
 
 .badge.gemini {
-  background: #12324a;
-  color: #64c7ff;
+  background: #4a2c10;
+  color: #FFB066;
 }
 
 .meta .file {
@@ -155,7 +167,7 @@ th {
 th,
 td {
   padding: 10px 12px;
-  border-bottom: 1px solid #1d2946;
+  border-bottom: 1px solid #22345A;
 }
 
 td.value {
