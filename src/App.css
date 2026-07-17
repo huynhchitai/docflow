@@ -1,0 +1,176 @@
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: #0b1020;
+  color: #e8ecf5;
+  font-family: system-ui, 'Segoe UI', Roboto, sans-serif;
+}
+
+.shell {
+  max-width: 880px;
+  margin: 0 auto;
+  padding: 40px 20px 60px;
+}
+
+header h1 {
+  font-size: 2.4rem;
+  margin: 0;
+  letter-spacing: -0.5px;
+}
+
+header h1 span {
+  color: #5b9cff;
+}
+
+.tagline {
+  color: #9aa7bf;
+  margin-top: 6px;
+}
+
+.dropzone {
+  margin-top: 28px;
+  border: 2px dashed #33415e;
+  border-radius: 14px;
+  padding: 48px 20px;
+  text-align: center;
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s;
+  background: #0e1530;
+}
+
+.dropzone.over,
+.dropzone:hover {
+  border-color: #5b9cff;
+  background: #101a3d;
+}
+
+.dropzone.busy {
+  opacity: 0.7;
+  pointer-events: none;
+}
+
+.dropzone .big {
+  font-size: 1.25rem;
+  margin: 0 0 6px;
+}
+
+.dropzone .hint {
+  color: #8391ad;
+  margin: 0;
+  font-size: 0.9rem;
+}
+
+.banner {
+  margin-top: 18px;
+  padding: 12px 16px;
+  border-radius: 10px;
+  font-size: 0.92rem;
+}
+
+.banner.error {
+  background: #3a1420;
+  border: 1px solid #7f2740;
+}
+
+.banner.warn {
+  background: #332a10;
+  border: 1px solid #7a651f;
+}
+
+.result {
+  margin-top: 24px;
+}
+
+.meta {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.badge {
+  font-size: 0.72rem;
+  font-weight: 700;
+  padding: 3px 8px;
+  border-radius: 6px;
+  letter-spacing: 0.5px;
+}
+
+.badge.mock {
+  background: #4a3a10;
+  color: #ffd166;
+}
+
+.badge.gemini {
+  background: #12324a;
+  color: #64c7ff;
+}
+
+.meta .file {
+  color: #8391ad;
+  font-size: 0.85rem;
+}
+
+.conf {
+  font-variant-numeric: tabular-nums;
+  font-size: 0.85rem;
+  padding: 2px 7px;
+  border-radius: 6px;
+}
+
+.conf.high {
+  background: #0f3524;
+  color: #5ee6a0;
+}
+
+.conf.mid {
+  background: #3d3312;
+  color: #ffd166;
+}
+
+.conf.low {
+  background: #3a1420;
+  color: #ff7d9c;
+}
+
+table {
+  width: 100%;
+  margin-top: 16px;
+  border-collapse: collapse;
+  font-size: 0.95rem;
+}
+
+th {
+  text-align: left;
+  color: #8391ad;
+  font-weight: 600;
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+}
+
+th,
+td {
+  padding: 10px 12px;
+  border-bottom: 1px solid #1d2946;
+}
+
+td.value {
+  font-weight: 600;
+}
+
+td.src {
+  color: #8391ad;
+  font-size: 0.82rem;
+  font-variant-numeric: tabular-nums;
+}
+
+footer {
+  margin-top: 48px;
+  color: #5c6884;
+  font-size: 0.8rem;
+  text-align: center;
+}
