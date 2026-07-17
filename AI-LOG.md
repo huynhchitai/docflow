@@ -47,4 +47,13 @@
 - Test production: upload đơn vay + hợp đồng → 16+10 trường,
   alert CRITICAL "Số CCCD không khớp ...346 ≠ ...345" — kịch bản demo chạy thật end-to-end.
 
+### Phiên 4 — Fri 17/07, ~22:45–23:59 ICT (Claude Code)
+- UI dossier flow hoàn chỉnh (`src/App.tsx`, `src/api.ts`, `src/DocViewer.tsx`):
+  danh sách bộ hồ sơ (state chips + đếm cảnh báo), tạo mới, upload nhiều file,
+  bảng trường theo chứng từ, sửa inline double-click (human review + audit),
+  banner cảnh báo cross-check, modal export core-banking.
+- **Doc Viewer click-to-highlight**: render PDF bằng pdfjs-dist, click trường →
+  vẽ khung cam + dim nền đúng vùng box_2d trên bản scan gốc (killer feature demo).
+- Deploy + smoke test: dossier "Nguyễn Văn An" state needs_review, 2 chứng từ, 1 alert critical.
+
 <!-- Thêm phiên mới theo format trên. Mỗi phiên: thời gian, việc AI làm, file liên quan. -->

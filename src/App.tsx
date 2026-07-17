@@ -1,33 +1,14 @@
-import { useCallback, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import './App.css'
-
-type ExtractedField = {
-  key: string
-  label: string
-  value: string
-  confidence: number
-  page: number
-  box_2d?: [number, number, number, number]
-}
-
-type ExtractResult = {
-  mode: 'gemini' | 'mock'
-  doc_type: string
-  doc_type_confidence: number
-  filename: string
-  size_bytes: number
-  fields: ExtractedField[]
-  warnings: string[]
-}
-
-const DOC_TYPE_LABELS: Record<string, string> = {
-  loan_application: 'Đơn đề nghị vay vốn',
-  financial_statement: 'Báo cáo tài chính',
-  credit_contract: 'Hợp đồng tín dụng',
-  swift_mt103: 'Điện thanh toán SWIFT MT103',
-  national_id: 'CCCD / Giấy tờ tùy thân',
-  other: 'Chứng từ khác',
-}
+import {
+  api,
+  DOC_TYPE_LABELS,
+  STATE_LABELS,
+  type DossierDetail,
+  type DossierSummary,
+  type Field,
+} from './api'
+import { DocViewer, type Highlight } from './DocViewer'
 
 function confidenceClass(c: number) {
   if (c >= 0.9) return 'conf high'
@@ -35,142 +16,273 @@ function confidenceClass(c: number) {
   return 'conf low'
 }
 
-function App() {
-  const [busy, setBusy] = useState(false)
-  const [result, setResult] = useState<ExtractResult | null>(null)
+function Header() {
+  return (
+    <header>
+      <div className="mark" aria-hidden="true" />
+      <h1>
+        Doc<span>Flow</span>
+      </h1>
+      <p className="tagline">
+        Hồ sơ tín dụng: từ scan đến core-banking trong vài phút — trích xuất có truy vết nguồn,
+        không bịa số liệu.
+      </p>
+    </header>
+  )
+}
+
+// ============ Danh sách bộ hồ sơ ============
+function DossierList({ onOpen }: { onOpen: (id: string) => void }) {
+  const [rows, setRows] = useState<DossierSummary[] | null>(null)
+  const [name, setName] = useState('')
   const [error, setError] = useState<string | null>(null)
-  const [dragOver, setDragOver] = useState(false)
+
+  const refresh = useCallback(() => {
+    api.listDossiers().then(setRows).catch((e) => setError(String(e)))
+  }, [])
+  useEffect(refresh, [refresh])
+
+  const create = async () => {
+    if (!name.trim()) return
+    try {
+      const { id } = await api.createDossier(name.trim())
+      setName('')
+      onOpen(id)
+    } catch (e) {
+      setError(String(e))
+    }
+  }
+
+  return (
+    <>
+      <div className="new-dossier">
+        <input
+          value={name}
+          placeholder="Tên bộ hồ sơ mới — vd: Hồ sơ vay · Nguyễn Văn An"
+          onChange={(e) => setName(e.target.value)}
+          onKeyDown={(e) => e.key === 'Enter' && create()}
+        />
+        <button onClick={create}>+ Tạo bộ hồ sơ</button>
+      </div>
+      {error && <div className="banner error">⚠️ {error}</div>}
+      {rows === null ? (
+        <p className="hint-center">Đang tải…</p>
+      ) : rows.length === 0 ? (
+        <p className="hint-center">Chưa có bộ hồ sơ nào — tạo cái đầu tiên đi.</p>
+      ) : (
+        <div className="dossier-grid">
+          {rows.map((d) => (
+            <button key={d.id} className="dossier-card" onClick={() => onOpen(d.id)}>
+              <strong>{d.name}</strong>
+              <div className="card-meta">
+                <span className={`chip state-${d.state}`}>{STATE_LABELS[d.state] ?? d.state}</span>
+                <span>{d.documents[0]?.count ?? 0} chứng từ</span>
+                {(d.crosscheck_alerts[0]?.count ?? 0) > 0 && (
+                  <span className="chip alert-chip">🚨 {d.crosscheck_alerts[0].count} cảnh báo</span>
+                )}
+              </div>
+            </button>
+          ))}
+        </div>
+      )}
+    </>
+  )
+}
+
+// ============ Chi tiết bộ hồ sơ ============
+function Dossier({ id, onBack }: { id: string; onBack: () => void }) {
+  const [d, setD] = useState<DossierDetail | null>(null)
+  const [busy, setBusy] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const [hl, setHl] = useState<Highlight | null>(null)
+  const [editing, setEditing] = useState<{ id: string; value: string } | null>(null)
+  const [exported, setExported] = useState<object | null>(null)
   const inputRef = useRef<HTMLInputElement>(null)
 
-  const processFile = useCallback(async (file: File) => {
+  const refresh = useCallback(() => {
+    api.getDossier(id).then(setD).catch((e) => setError(String(e)))
+  }, [id])
+  useEffect(refresh, [refresh])
+
+  const upload = async (files: File[]) => {
+    if (!files.length) return
     setBusy(true)
     setError(null)
-    setResult(null)
     try {
-      const form = new FormData()
-      form.append('file', file)
-      const resp = await fetch('/api/extract', { method: 'POST', body: form })
-      const data = await resp.json()
-      if (!resp.ok) throw new Error(data.error ?? `HTTP ${resp.status}`)
-      setResult(data as ExtractResult)
+      await api.uploadFiles(id, files)
+      refresh()
     } catch (e) {
-      setError(e instanceof Error ? e.message : String(e))
+      setError(String(e))
     } finally {
       setBusy(false)
     }
-  }, [])
+  }
 
-  const onDrop = useCallback(
-    (e: React.DragEvent) => {
-      e.preventDefault()
-      setDragOver(false)
-      const file = e.dataTransfer.files?.[0]
-      if (file) void processFile(file)
-    },
-    [processFile],
-  )
+  const saveEdit = async () => {
+    if (!editing) return
+    try {
+      await api.editField(editing.id, editing.value)
+      setEditing(null)
+      refresh()
+    } catch (e) {
+      setError(String(e))
+    }
+  }
+
+  const doExport = async () => {
+    try {
+      setExported(await api.exportDossier(id))
+      refresh()
+    } catch (e) {
+      setError(String(e))
+    }
+  }
+
+  if (!d) return <p className="hint-center">{error ?? 'Đang tải…'}</p>
 
   return (
-    <main className="shell">
-      <header>
-        <div className="mark" aria-hidden="true" />
-        <h1>
-          Doc<span>Flow</span>
-        </h1>
-        <p className="tagline">
-          Hồ sơ tín dụng: từ scan đến core-banking trong vài phút — trích xuất có truy vết nguồn,
-          không bịa số liệu.
-        </p>
-      </header>
+    <>
+      <div className="detail-bar">
+        <button className="ghost" onClick={onBack}>← Danh sách</button>
+        <strong>{d.name}</strong>
+        <span className={`chip state-${d.state}`}>{STATE_LABELS[d.state] ?? d.state}</span>
+        <span className="spacer" />
+        <button onClick={doExport} disabled={!d.documents.length}>🏦 Export core-banking</button>
+      </div>
+
+      {error && <div className="banner error">⚠️ {error}</div>}
+
+      {d.crosscheck_alerts.length > 0 && (
+        <div className="banner critical">
+          {d.crosscheck_alerts.map((a) => (
+            <div key={a.id}>
+              {a.severity === 'critical' ? '🚨' : '⚠️'} <b>{a.severity.toUpperCase()}</b> — {a.detail}
+            </div>
+          ))}
+        </div>
+      )}
 
       <section
-        className={`dropzone ${dragOver ? 'over' : ''} ${busy ? 'busy' : ''}`}
-        onDragOver={(e) => {
+        className={`dropzone slim ${busy ? 'busy' : ''}`}
+        onDragOver={(e) => e.preventDefault()}
+        onDrop={(e) => {
           e.preventDefault()
-          setDragOver(true)
+          upload([...e.dataTransfer.files])
         }}
-        onDragLeave={() => setDragOver(false)}
-        onDrop={onDrop}
         onClick={() => inputRef.current?.click()}
       >
         <input
           ref={inputRef}
           type="file"
           accept=".pdf,image/*"
+          multiple
           hidden
-          onChange={(e) => {
-            const f = e.target.files?.[0]
-            if (f) void processFile(f)
-          }}
+          onChange={(e) => upload([...(e.target.files ?? [])])}
         />
-        {busy ? (
-          <p>⏳ Đang phân loại &amp; trích xuất…</p>
-        ) : (
-          <>
-            <p className="big">📄 Kéo-thả hồ sơ vào đây</p>
-            <p className="hint">PDF hoặc ảnh scan — đơn vay, BCTC, hợp đồng, điện SWIFT/TT</p>
-          </>
-        )}
+        {busy ? '⏳ Đang trích xuất — Gemini đang đọc từng trang…' : '📄 Thả thêm chứng từ vào đây (PDF/ảnh, chọn được nhiều file)'}
       </section>
 
-      {error && <div className="banner error">⚠️ {error}</div>}
-
-      {result && (
-        <section className="result">
-          <div className="meta">
-            <span className={`badge ${result.mode}`}>
-              {result.mode === 'mock' ? 'MOCK' : 'GEMINI'}
-            </span>
-            <strong>{DOC_TYPE_LABELS[result.doc_type] ?? result.doc_type}</strong>
-            <span className={confidenceClass(result.doc_type_confidence)}>
-              {(result.doc_type_confidence * 100).toFixed(0)}%
-            </span>
-            <span className="file">
-              {result.filename} · {(result.size_bytes / 1024).toFixed(0)} KB
-            </span>
-          </div>
-
-          {result.warnings.length > 0 && (
-            <div className="banner warn">
-              {result.warnings.map((w) => (
-                <div key={w}>⚠️ {w}</div>
-              ))}
+      <div className="detail-cols">
+        <div className="docs-col">
+          {d.documents.map((doc) => (
+            <div key={doc.id} className="doc-card">
+              <div className="doc-head">
+                <strong>{DOC_TYPE_LABELS[doc.doc_type] ?? doc.doc_type}</strong>
+                <span className={confidenceClass(doc.doc_type_confidence)}>
+                  {(doc.doc_type_confidence * 100).toFixed(0)}%
+                </span>
+                <span className="file">{doc.filename}</span>
+              </div>
+              {doc.warnings.length > 0 && (
+                <div className="banner warn small">
+                  {doc.warnings.map((w) => (
+                    <div key={w}>⚠️ {w}</div>
+                  ))}
+                </div>
+              )}
+              <table>
+                <tbody>
+                  {doc.fields.map((f: Field) => (
+                    <tr
+                      key={f.id}
+                      className={hl?.label === f.label && hl.docId === doc.id ? 'row-active' : ''}
+                      onClick={() =>
+                        setHl({ docId: doc.id, mimeType: doc.mime_type, page: f.page, box: f.box_2d, label: f.label })
+                      }
+                    >
+                      <td>{f.label}</td>
+                      <td className="value">
+                        {editing?.id === f.id ? (
+                          <input
+                            autoFocus
+                            value={editing.value}
+                            onClick={(e) => e.stopPropagation()}
+                            onChange={(e) => setEditing({ id: f.id, value: e.target.value })}
+                            onKeyDown={(e) => {
+                              if (e.key === 'Enter') saveEdit()
+                              if (e.key === 'Escape') setEditing(null)
+                            }}
+                            onBlur={saveEdit}
+                          />
+                        ) : (
+                          <span
+                            onDoubleClick={(e) => {
+                              e.stopPropagation()
+                              setEditing({ id: f.id, value: f.value })
+                            }}
+                            title="Double-click để sửa (human review)"
+                          >
+                            {f.value} {f.human_reviewed && '✏️'}
+                          </span>
+                        )}
+                      </td>
+                      <td>
+                        <span className={confidenceClass(f.confidence)}>
+                          {(f.confidence * 100).toFixed(0)}%
+                        </span>
+                      </td>
+                      <td className="src">tr.{f.page}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             </div>
+          ))}
+        </div>
+        <div className="viewer-col">
+          {hl ? (
+            <DocViewer hl={hl} />
+          ) : (
+            <div className="viewer-empty">👈 Click một trường bất kỳ để soi đúng vị trí của nó trên bản scan gốc</div>
           )}
+        </div>
+      </div>
 
-          <table>
-            <thead>
-              <tr>
-                <th>Trường</th>
-                <th>Giá trị</th>
-                <th>Tin cậy</th>
-                <th>Nguồn</th>
-              </tr>
-            </thead>
-            <tbody>
-              {result.fields.map((f) => (
-                <tr key={f.key}>
-                  <td>{f.label}</td>
-                  <td className="value">{f.value}</td>
-                  <td>
-                    <span className={confidenceClass(f.confidence)}>
-                      {(f.confidence * 100).toFixed(0)}%
-                    </span>
-                  </td>
-                  <td className="src">
-                    trang {f.page}
-                    {f.box_2d && ` · [${f.box_2d.join(', ')}]`}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </section>
+      {exported && (
+        <div className="modal" onClick={() => setExported(null)}>
+          <div className="modal-body" onClick={(e) => e.stopPropagation()}>
+            <div className="viewer-head">🏦 Payload gửi core-banking (schema shb.core-banking.loan-intake.v1)</div>
+            <pre>{JSON.stringify(exported, null, 2)}</pre>
+            <button onClick={() => setExported(null)}>Đóng</button>
+          </div>
+        </div>
       )}
+    </>
+  )
+}
 
+function App() {
+  const [view, setView] = useState<{ page: 'list' } | { page: 'dossier'; id: string }>({ page: 'list' })
+  return (
+    <main className="shell wide">
+      <Header />
+      {view.page === 'list' ? (
+        <DossierList onOpen={(id) => setView({ page: 'dossier', id })} />
+      ) : (
+        <Dossier id={view.id} onBack={() => setView({ page: 'list' })} />
+      )}
       <footer>
-        DocFlow — Vietnam AI Innovation Challenge 2026 · SHB Intelligent Document Processing ·
-        team megalondon
+        DocFlow — Vietnam AI Innovation Challenge 2026 · SHB Intelligent Document Processing · team megalondon
       </footer>
     </main>
   )

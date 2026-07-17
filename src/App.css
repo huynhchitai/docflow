@@ -186,3 +186,81 @@ footer {
   font-size: 0.8rem;
   text-align: center;
 }
+
+/* ===== Dossier flow ===== */
+.shell.wide { max-width: 1180px; }
+
+.new-dossier { display: flex; gap: 10px; margin-top: 24px; }
+.new-dossier input {
+  flex: 1; padding: 12px 14px; border-radius: 10px; border: 1px solid #2A3B5E;
+  background: #0F1D38; color: #e8ecf5; font-size: 0.95rem;
+}
+button {
+  background: #F58220; color: #0A152B; border: 0; border-radius: 10px;
+  padding: 12px 18px; font-weight: 700; cursor: pointer; font-size: 0.9rem;
+}
+button:hover { background: #ff9440; }
+button:disabled { opacity: 0.5; cursor: default; }
+button.ghost { background: transparent; color: #9aa7bf; border: 1px solid #2A3B5E; }
+button.ghost:hover { color: #e8ecf5; border-color: #F58220; }
+
+.hint-center { text-align: center; color: #8391ad; margin-top: 40px; }
+
+.dossier-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 14px; margin-top: 20px; }
+.dossier-card {
+  text-align: left; background: #0F1D38; border: 1px solid #2A3B5E; border-radius: 12px;
+  padding: 16px; color: #e8ecf5; font-size: 1rem; cursor: pointer;
+}
+.dossier-card:hover { border-color: #F58220; background: #14244A; }
+.card-meta { display: flex; gap: 10px; align-items: center; margin-top: 10px; font-size: 0.8rem; color: #8391ad; flex-wrap: wrap; }
+
+.chip { padding: 3px 9px; border-radius: 999px; font-size: 0.72rem; font-weight: 700; letter-spacing: 0.4px; }
+.state-uploading { background: #22345A; color: #9ab4e8; }
+.state-extracting { background: #3d3312; color: #ffd166; }
+.state-needs_review { background: #3a1420; color: #ff7d9c; }
+.state-done { background: #0f3524; color: #5ee6a0; }
+.state-exported { background: #12324a; color: #64c7ff; }
+.alert-chip { background: #3a1420; color: #ff7d9c; }
+
+.detail-bar { display: flex; align-items: center; gap: 12px; margin-top: 24px; flex-wrap: wrap; }
+.detail-bar .spacer { flex: 1; }
+
+.banner.critical { background: #3a1420; border: 1px solid #ff3b6b; font-weight: 600; }
+.banner.small { font-size: 0.82rem; padding: 8px 12px; margin-top: 8px; }
+
+.dropzone.slim { padding: 18px; margin-top: 16px; font-size: 0.92rem; color: #9aa7bf; }
+
+.detail-cols { display: grid; grid-template-columns: minmax(0, 1fr) minmax(320px, 560px); gap: 18px; margin-top: 18px; align-items: start; }
+@media (max-width: 900px) { .detail-cols { grid-template-columns: 1fr; } }
+
+.doc-card { background: #0F1D38; border: 1px solid #22345A; border-radius: 12px; padding: 14px 16px; margin-bottom: 14px; }
+.doc-head { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+.doc-card table { margin-top: 8px; font-size: 0.88rem; }
+.doc-card td { padding: 7px 8px; }
+.doc-card tr { cursor: pointer; }
+.doc-card tr:hover td { background: #14244A; }
+.row-active td { background: #1b2f5c !important; }
+.doc-card td.value input {
+  width: 100%; background: #0A152B; border: 1px solid #F58220; color: #e8ecf5;
+  border-radius: 6px; padding: 4px 8px; font-size: 0.88rem;
+}
+
+.viewer-col { position: sticky; top: 16px; }
+.viewer { background: #0F1D38; border: 1px solid #22345A; border-radius: 12px; overflow: hidden; }
+.viewer-head { padding: 10px 14px; font-size: 0.85rem; color: #FFB066; background: #14244A; font-weight: 600; }
+.viewer-stage { position: relative; overflow: auto; max-height: 78vh; }
+.viewer-stage img, .viewer-stage canvas { display: block; max-width: 100%; }
+.hl-box {
+  position: absolute; border: 3px solid #F58220; border-radius: 4px;
+  background: rgba(245, 130, 32, 0.18); box-shadow: 0 0 0 4000px rgba(10, 21, 43, 0.35);
+  pointer-events: none; transition: all 0.25s ease;
+}
+.viewer-empty {
+  border: 1px dashed #2A3B5E; border-radius: 12px; padding: 60px 24px;
+  text-align: center; color: #8391ad; font-size: 0.92rem;
+}
+
+.modal { position: fixed; inset: 0; background: rgba(4, 10, 24, 0.75); display: flex; align-items: center; justify-content: center; padding: 24px; z-index: 50; }
+.modal-body { background: #0F1D38; border: 1px solid #F58220; border-radius: 14px; max-width: 720px; width: 100%; max-height: 80vh; overflow: auto; padding: 0 0 16px; }
+.modal-body pre { margin: 0; padding: 16px; font-size: 0.78rem; overflow: auto; color: #b9e8a0; }
+.modal-body button { margin: 0 16px; }
