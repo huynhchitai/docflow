@@ -38,4 +38,13 @@
 - Test end-to-end trên hợp đồng thế chấp demo: doc_type 100%, đủ field + bbox,
   tự phát hiện CCCD lệch và cảnh báo thiếu chữ ký/con dấu.
 
+### Phiên 3 — Fri 17/07, ~19:30–22:45 ICT (Claude Code)
+- Supabase: secrets lên prod Worker, bucket `scans`, migration 0001 (5 bảng + RLS, lead chạy SQL Editor).
+- Viết vòng đời hồ sơ trong Worker (`worker/db.ts`, `worker/crosscheck.ts`, mở rộng `index.ts`):
+  POST/GET dossiers, upload nhiều file → Storage → extract → persist fields+bbox,
+  cross-check engine (CCCD/tên/số tiền/kỳ hạn giữa các chứng từ), PATCH field + audit log,
+  serve file gốc cho viewer, POST export payload core-banking. Retry khi Gemini trả rỗng.
+- Test production: upload đơn vay + hợp đồng → 16+10 trường,
+  alert CRITICAL "Số CCCD không khớp ...346 ≠ ...345" — kịch bản demo chạy thật end-to-end.
+
 <!-- Thêm phiên mới theo format trên. Mỗi phiên: thời gian, việc AI làm, file liên quan. -->
