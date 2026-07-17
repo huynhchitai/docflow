@@ -59,7 +59,7 @@ app.post('/api/extract', async (c) => {
     return c.json({ error: 'Thiếu file — gửi multipart/form-data với field "file".' }, 400)
   }
 
-  const hasCreds = Boolean(c.env.GCP_SERVICE_ACCOUNT_KEY || c.env.GEMINI_API_KEY)
+  const hasCreds = Boolean((c.env.GEMINI_PROXY_URL && c.env.GEMINI_PROXY_KEY) || c.env.GCP_SERVICE_ACCOUNT_KEY || c.env.GEMINI_API_KEY)
   if (!hasCreds) {
     // Chưa cấu hình key → trả kết quả mẫu để UI/pipeline test được end-to-end
     const mock: ExtractResult = {
@@ -92,7 +92,7 @@ app.post('/api/extract', async (c) => {
   let text: string
   try {
     text = await generateContent(c.env, {
-      model: 'gemini-2.5-flash',
+      model: 'gemini-3-flash-preview',
       mimeType: file.type || 'application/pdf',
       dataB64: b64,
       prompt: EXTRACTION_PROMPT,

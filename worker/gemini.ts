@@ -7,6 +7,8 @@ type ServiceAccount = {
 }
 
 export type GeminiEnv = {
+  GEMINI_PROXY_URL?: string // Cloud Run proxy → Vertex AI qua ADC (ưu tiên nhất)
+  GEMINI_PROXY_KEY?: string
   GCP_SERVICE_ACCOUNT_KEY?: string // full JSON của service account (role: Vertex AI User)
   GCP_LOCATION?: string // mặc định "global"
   GEMINI_API_KEY?: string // fallback AI Studio
@@ -78,6 +80,26 @@ export type GenerateArgs = {
 
 /** Trả về text JSON từ Gemini. Ném lỗi kèm chi tiết nếu API fail. */
 export async function generateContent(env: GeminiEnv, args: GenerateArgs): Promise<string> {
+  // Đường 1: Cloud Run proxy (Vertex AI, ADC — không SA key, IP Google nên không bị chặn location)
+  if (env.GEMINI_PROXY_URL && env.GEMINI_PROXY_KEY) {
+    const resp = await fetch(`${env.GEMINI_PROXY_URL}/generate`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'x-proxy-key': env.GEMINI_PROXY_KEY },
+      body: JSON.stringify({
+        model: args.model,
+        mimeType: args.mimeType,
+        dataB64: args.dataB64,
+        prompt: args.prompt,
+      }),
+    })
+    if (!resp.ok) throw new Error(`Proxy ${resp.status}: ${(await resp.text()).slice(0, 500)}`)
+    const data = (await resp.json()) as { text: string }
+    return data.text
+  }
+  return generateDirect(env, args)
+}
+
+async function generateDirect(env: GeminiEnv, args: GenerateArgs): Promise<string> {
   const body = JSON.stringify({
     contents: [
       {

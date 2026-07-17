@@ -7,6 +7,9 @@
   "assets": {
     "not_found_handling": "single-page-application"
   },
+  "vars": {
+    "GEMINI_PROXY_URL": "https://docflow-gemini-proxy-693873481880.asia-southeast1.run.app"
+  },
   "observability": {
     "enabled": true
   }

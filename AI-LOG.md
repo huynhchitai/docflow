@@ -28,4 +28,14 @@
 - Viết ROADMAP.md (kiến trúc đích + phân công 48h).
 - Restyle UI theo bộ nhận diện SHB 2026 (cam + Midnight Navy, motif tròn-vuông).
 
+### Phiên 2 — Fri 17/07, ~17:30–19:15 ICT (Claude Code)
+- Chuyển LLM sang Gemini qua Vertex AI. Org policy chặn SA key → kiến trúc thay thế:
+  **Cloud Run proxy** (`gcp-proxy/`) chạy bằng service account `docflow-vertex` qua ADC
+  (không tồn tại key file — tuân thủ org policy), Worker gọi proxy với secret header.
+- Setup GCP bằng gcloud: bật APIs (aiplatform, run, artifactregistry), tạo SA + role
+  `aiplatform.user`, build image linux/amd64 local, push Artifact Registry, deploy Cloud Run.
+- Model: `gemini-3-flash-preview` (2.5-flash đã ngừng cho user mới).
+- Test end-to-end trên hợp đồng thế chấp demo: doc_type 100%, đủ field + bbox,
+  tự phát hiện CCCD lệch và cảnh báo thiếu chữ ký/con dấu.
+
 <!-- Thêm phiên mới theo format trên. Mỗi phiên: thời gian, việc AI làm, file liên quan. -->
