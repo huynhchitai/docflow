@@ -389,6 +389,27 @@ app.get('/api/documents/:id/file', async (c) => {
   })
 })
 
+// ---- Chuẩn hóa giá trị cho core-banking: giữ raw để truy vết + value máy đọc được ----
+function normMoney(s: string | null): { raw: string; value: number; currency: string } | null {
+  if (!s) return null
+  const digits = s.replace(/\D/g, '')
+  return digits ? { raw: s, value: Number(digits), currency: 'VND' } : null
+}
+
+function normNumber(s: string | null): { raw: string; value: number } | null {
+  if (!s) return null
+  const m = s.replace(',', '.').match(/\d+(?:\.\d+)?/)
+  return m ? { raw: s, value: Number(m[0]) } : null
+}
+
+function normDateISO(s: string | null): { raw: string; iso: string | null } | null {
+  if (!s) return null
+  const m = s.match(/(\d{1,2})[\/\-.](\d{1,2})[\/\-.](\d{4})/)
+  if (!m) return { raw: s, iso: null }
+  const [, d, mo, y] = m
+  return { raw: s, iso: `${y}-${mo.padStart(2, '0')}-${d.padStart(2, '0')}` }
+}
+
 // Export payload chuẩn core-banking (deliverable SHB)
 app.post('/api/dossiers/:id/export', async (c) => {
   const id = c.req.param('id')
@@ -422,21 +443,28 @@ app.post('/api/dossiers/:id/export', async (c) => {
     dossier_id: d.id,
     dossier_name: d.name,
     exported_at: new Date().toISOString(),
-    // CIF = Customer Information File — khái niệm chuẩn của core banking
+    // CIF = Customer Information File — khái niệm chuẩn của core banking.
+    // Trường số/ngày: raw (nguyên văn trên giấy, phục vụ truy vết) + value/iso (máy đọc được).
     cif: {
       full_name: pick('customer_name'),
-      national_id: pick('national_id'),
-      date_of_birth: pick('date_of_birth'),
+      national_id: pick('national_id')?.replace(/\D/g, '') ?? null,
+      national_id_raw: pick('national_id'),
+      date_of_birth: normDateISO(pick('date_of_birth')),
       address: pick('address'),
-      phone: pick('phone'),
+      phone: pick('phone')?.replace(/\D/g, '') ?? null,
     },
-    loan: { amount: pick('loan_amount'), term: pick('loan_term'), interest_rate: pick('interest_rate'), collateral: pick('collateral') },
+    loan: {
+      amount: normMoney(pick('loan_amount')),
+      term_months: normNumber(pick('loan_term')),
+      interest_rate_pct_pa: normNumber(pick('interest_rate')),
+      collateral: pick('collateral'),
+    },
     cash_flow: {
-      revenue: pick('revenue'),
-      net_profit: pick('net_profit'),
-      declared_income: pick('income'),
+      revenue: normMoney(pick('revenue')),
+      net_profit: normMoney(pick('net_profit')),
+      declared_income_monthly: normMoney(pick('income')),
       repayment_source: pick('repayment_source'),
-      monthly_repayment: pick('monthly_repayment'),
+      monthly_repayment: normMoney(pick('monthly_repayment')),
     },
     documents: d.documents.map((doc) => ({ type: doc.doc_type, filename: doc.filename, field_count: doc.fields.length })),
     review: {
