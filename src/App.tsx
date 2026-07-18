@@ -287,11 +287,13 @@ function DossierList({ onOpen, onFields, onGuide }: { onOpen: (id: string) => vo
               <strong>{d.name}</strong>
               {d.customer_name && <div className="card-customer"><UserIcon size={12} /> {d.customer_name}</div>}
               <div className="card-meta">
-                <span className={`chip state-${d.state}`}>{STATE_LABELS[d.state] ?? d.state}</span>
-                <span>{d.documents[0]?.count ?? 0} chứng từ</span>
-                {(d.crosscheck_alerts[0]?.count ?? 0) > 0 && (
-                  <span className="chip alert-chip"><AlertTriangle size={11} /> {d.crosscheck_alerts[0].count} cảnh báo</span>
-                )}
+                <span className="card-doccount">{d.documents[0]?.count ?? 0} chứng từ</span>
+                <div className="card-chips">
+                  <span className={`chip state-${d.state}`}>{STATE_LABELS[d.state] ?? d.state}</span>
+                  {(d.crosscheck_alerts[0]?.count ?? 0) > 0 && (
+                    <span className="chip alert-chip"><AlertTriangle size={11} /> {d.crosscheck_alerts[0].count} cảnh báo</span>
+                  )}
+                </div>
               </div>
             </button>
           ))}

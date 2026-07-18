@@ -287,15 +287,17 @@ input:focus-visible,
 
 .card-meta {
   display: flex;
-  gap: 10px;
-  align-items: center;
+  flex-direction: column;
+  gap: 8px;
+  align-items: flex-start;
   margin-top: 14px;
   font-size: 0.84rem;
   color: var(--muted);
-  flex-wrap: wrap;
   font-weight: 400;
 }
 .card-meta .chip { font-size: 0.74rem; padding: 4px 11px; }
+.card-doccount { font-size: 0.82rem; }
+.card-chips { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
 
 /* ---------- Chips trạng thái ---------- */
 .chip {
