@@ -660,6 +660,94 @@ function AccessGate({ onDone, onGuide }: { onDone: () => void; onGuide: () => vo
   )
 }
 
+// ============ Cấu hình trường dữ liệu ============
+function FieldSpecsPage({ onBack }: { onBack: () => void }) {
+  const [list, setList] = useState<FieldSpec[] | null>(null)
+  const [error, setError] = useState<string | null>(null)
+  const [form, setForm] = useState({ label: '', key: '', aliases: '', norm: 'text_loose' as FieldSpec['norm'], crosscheck: false, profile: true })
+  const [saving, setSaving] = useState(false)
+
+  const refresh = useCallback(() => {
+    api.fieldSpecs().then(setList).catch((e) => setError(String(e)))
+  }, [])
+  useEffect(refresh, [refresh])
+
+  const slugify = (s: string) =>
+    s.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/đ/g, 'd').replace(/[^a-z0-9]+/g, '_').replace(/^_|_$/g, '')
+
+  const add = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!form.label.trim() || saving) return
+    setSaving(true)
+    setError(null)
+    try {
+      await api.addFieldSpec({ ...form, key: form.key.trim() || slugify(form.label) })
+      setForm({ label: '', key: '', aliases: '', norm: 'text_loose', crosscheck: false, profile: true })
+      refresh()
+    } catch (e2) {
+      setError(String(e2))
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  return (
+    <>
+      <div className="detail-bar">
+        <button className="ghost" onClick={onBack}><ArrowLeft size={15} /> Danh sách</button>
+        <strong>Trường dữ liệu</strong>
+      </div>
+      <p className="tagline">
+        AI được phép trích thêm trường ngoài danh sách (tự đặt key snake_case) — chúng hiển thị trong bảng chứng từ.
+        Chỉ trường khai báo ở đây mới được <b>tổng hợp lên thẻ khách hàng</b> và <b>đối chiếu chéo</b>.
+        Trường mới có hiệu lực ngay với chứng từ tải lên sau đó — không cần triển khai lại.
+      </p>
+      {error && <div className="banner error"><AlertTriangle size={14} /> {error}</div>}
+
+      <form className="spec-form" onSubmit={add}>
+        <input value={form.label} placeholder="Nhãn — vd: Mã số thuế" onChange={(e) => setForm({ ...form, label: e.target.value })} />
+        <input value={form.key} placeholder={`key: ${form.label ? slugify(form.label) : 'tu_dat_hoac_de_trong'}`} onChange={(e) => setForm({ ...form, key: e.target.value })} />
+        <select value={form.norm} onChange={(e) => setForm({ ...form, norm: e.target.value as FieldSpec['norm'] })}>
+          <option value="digits">Chỉ giữ chữ số (CCCD, tiền…)</option>
+          <option value="person_name">Tên người (bỏ dấu, in hoa)</option>
+          <option value="text_loose">Chữ tự do</option>
+        </select>
+        <label className="check"><input type="checkbox" checked={form.crosscheck} onChange={(e) => setForm({ ...form, crosscheck: e.target.checked })} /> Đối chiếu chéo</label>
+        <label className="check"><input type="checkbox" checked={form.profile} onChange={(e) => setForm({ ...form, profile: e.target.checked })} /> Lên thẻ khách</label>
+        <button type="submit" disabled={saving}>{saving ? 'Đang lưu…' : 'Thêm trường'}</button>
+      </form>
+
+      {list === null ? (
+        <p className="hint-center">Đang tải…</p>
+      ) : (
+        <table className="spec-table">
+          <thead>
+            <tr><th>Key</th><th>Nhãn</th><th>Chuẩn hóa</th><th>Đối chiếu</th><th>Thẻ khách</th><th></th></tr>
+          </thead>
+          <tbody>
+            {list.map((f) => (
+              <tr key={f.key} className={f.built_in ? 'builtin' : ''}>
+                <td className="value">{f.key}</td>
+                <td>{f.label}</td>
+                <td className="src">{f.norm}</td>
+                <td>{f.crosscheck ? '✓' : '—'}</td>
+                <td>{f.profile ? '✓' : '—'}</td>
+                <td>
+                  {f.built_in ? (
+                    <span className="src">built-in</span>
+                  ) : (
+                    <button className="ghost small" onClick={() => f.id && api.deleteFieldSpec(f.id).then(refresh)}>Xóa</button>
+                  )}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      )}
+    </>
+  )
+}
+
 function App() {
   const [authed, setAuthed] = useState(() => Boolean(localStorage.getItem(ACCESS_KEY)))
   const [view, setView] = useState<{ page: 'list' } | { page: 'dossier'; id: string } | { page: 'fields' } | { page: 'guide' }>({ page: 'list' })
