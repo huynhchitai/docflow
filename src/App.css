@@ -195,19 +195,25 @@ input:focus-visible,
 }
 
 .dossier-card {
+  /* button bị global inline-flex ngang — ép về cột, phân cấp dọc */
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 2px;
   text-align: left;
   background: var(--navy-800);
   border: 1px solid var(--line);
   box-shadow: 0 1px 3px rgba(14, 31, 61, 0.06);
   border-radius: var(--r) var(--r) var(--r) var(--r-sq);
-  padding: 20px 22px;
+  padding: 18px 20px;
   color: var(--text);
-  font-size: 1.05rem;
-  line-height: 1.4;
+  font-size: 1.02rem;
+  line-height: 1.35;
   cursor: pointer;
   font-weight: 700;
   transition: border-color 0.15s, background 0.15s, box-shadow 0.15s;
 }
+.dossier-card strong { display: block; }
 .dossier-card:hover { box-shadow: 0 4px 14px rgba(14, 31, 61, 0.1); }
 
 .dossier-card:hover {
@@ -938,7 +944,7 @@ button.danger:hover { border-color: var(--bad); color: var(--bad); }
 .reviewed-ico { color: var(--cam-text); vertical-align: -1px; }
 .banner { display: flex; align-items: flex-start; gap: 8px; flex-direction: column; }
 .banner.error, .banner.warn { flex-direction: row; align-items: center; }
-.card-customer { display: inline-flex; align-items: center; gap: 6px; font-size: 0.92rem; margin-top: 6px; }
+.card-customer { display: flex; align-items: center; gap: 6px; font-size: 0.9rem; margin-top: 4px; color: var(--muted); font-weight: 500; }
 .dossier-sub { display: flex; align-items: center; gap: 6px; }
 
 /* ---------- Landing (trang nhập mã) ---------- */
