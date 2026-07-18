@@ -1094,3 +1094,64 @@ button.danger:hover { border-color: var(--bad); color: var(--bad); }
   .landing { min-height: auto; padding-top: 24px; }
   .landing-login { margin-bottom: 24px; }
 }
+
+/* ============ Redesign modal so sánh ============ */
+.modal-body.compare-body {
+  max-width: 1180px;
+  padding: 0 0 16px;
+  border-color: var(--line);
+}
+
+.compare-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+}
+
+.compare-title { display: inline-flex; align-items: center; gap: 8px; min-width: 0; }
+
+.modal-x {
+  background: transparent;
+  color: #cdd9f0;
+  border: 0;
+  padding: 4px 6px;
+  border-radius: 8px;
+}
+.modal-x:hover { background: rgba(255, 255, 255, 0.12); color: #fff; }
+
+.compare-grid { padding: 14px 16px 0; gap: 14px; }
+
+.compare-pane {
+  background: var(--navy-900);
+  border: 1px solid var(--line);
+  border-radius: 12px 12px 12px var(--r-sq);
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.pane-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+.pane-top .file { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+/* Giá trị: chip gọn bên phải, không banner full-width */
+.compare-value {
+  align-self: auto;
+  flex-shrink: 0;
+  font-size: 0.92rem;
+  padding: 4px 12px;
+  text-align: left;
+}
+
+/* Viewer trong pane: viền trung tính, chiều cao kiểm soát để nút luôn trong tầm mắt */
+.compare-pane .viewer { border-color: var(--line); }
+.compare-pane .viewer-stage { max-height: 46vh; }
+
+.resolve-btn { margin-bottom: 0; }

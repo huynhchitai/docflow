@@ -17,7 +17,7 @@ import { Guide, HeroStats } from './Guide'
 import { ACCESS_KEY } from './api'
 import {
   AlertTriangle, ArrowLeft, BookOpen, Check, Copy, Flame, FolderPlus, Landmark, OctagonAlert,
-  Pencil, Scale, ScanSearch, Settings2, ShieldAlert, Timer, Trash2, User as UserIcon,
+  Pencil, Scale, ScanSearch, Settings2, ShieldAlert, Timer, Trash2, User as UserIcon, X,
 } from 'lucide-react'
 
 function confidenceClass(c: number) {
@@ -580,18 +580,32 @@ function Dossier({ id, onBack }: { id: string; onBack: () => void }) {
       {compare && (
         <div className="modal" onClick={() => setCompare(null)}>
           <div className="modal-body compare-body" onClick={(e) => e.stopPropagation()}>
-            <div className="viewer-head">
-              <Scale size={15} /> So sánh nguồn — {compare.label}: "{compare.a.field.value}" ≠ "{compare.b.field.value}"
+            <div className="viewer-head compare-head">
+              <span className="compare-title">
+                <Scale size={15} /> So sánh nguồn — {compare.label}
+              </span>
+              <button className="modal-x" onClick={() => setCompare(null)} aria-label="Đóng">
+                <X size={16} />
+              </button>
             </div>
             <div className="compare-grid">
               {[compare.a, compare.b].map((h, i) => {
                 const other = i === 0 ? compare.b : compare.a
                 return (
                   <div key={i} className="compare-pane">
-                    <div className="compare-label">
-                      <span className="file">{h.doc.filename}</span>
+                    <div className="pane-top">
+                      <span className="file" title={h.doc.filename}>{h.doc.filename}</span>
                       <span className="compare-value">{h.field.value}</span>
                     </div>
+                    <DocViewer
+                      hl={{
+                        docId: h.doc.id,
+                        mimeType: h.doc.mime_type,
+                        page: h.field.page,
+                        box: h.field.box_2d,
+                        label: compare.label,
+                      }}
+                    />
                     <button
                       className="resolve-btn"
                       disabled={resolving}
@@ -612,20 +626,10 @@ function Dossier({ id, onBack }: { id: string; onBack: () => void }) {
                     >
                       {resolving ? 'Đang hiệu chỉnh…' : <><Check size={15} /> Dùng giá trị này làm chuẩn</>}
                     </button>
-                    <DocViewer
-                      hl={{
-                        docId: h.doc.id,
-                        mimeType: h.doc.mime_type,
-                        page: h.field.page,
-                        box: h.field.box_2d,
-                        label: compare.label,
-                      }}
-                    />
                   </div>
                 )
               })}
             </div>
-            <button onClick={() => setCompare(null)}>Đóng</button>
           </div>
         </div>
       )}
