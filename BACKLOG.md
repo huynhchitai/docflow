@@ -20,7 +20,7 @@
 ### 🥇 Giải Nhất 260tr — đường vào top 10
 - ✅ Bộ test accuracy: 84.4% thô / 95% loại flake · p50 26s · metrics/ACCURACY.md + bench.py
 - ✅ Scan giả lập (nghiêng/mờ/nhiễu/bóng): demo-data/scans/ — 3/3 phân loại đúng, vẫn bắt CCCD lệch. (In+chụp thật vẫn nên làm nếu kịp)
-- 🔴 **Pitch deck** (theo kịch bản 7 bước trong ARCHITECTURE.md §5) + luyện 5'
+- 🟡 Kịch bản pitch 7 màn + Q&A tủ: PITCH.md ✅ — còn dựng slide (Canva theo PITCH.md) + luyện nói
 - 🔴 **Video demo backup** (quay tối nay khi sản phẩm ổn định)
 - 🟡 Final submission fields: deck, video, AI-log ZIP session files (`~/.claude/projects/`)
 - ✅ AI-LOG.md đủ phiên · ✅ live URL · ✅ repo public + README
