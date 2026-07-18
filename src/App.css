@@ -189,8 +189,8 @@ input:focus-visible,
 /* ---------- Lưới bộ hồ sơ ---------- */
 .dossier-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-  gap: 14px;
+  grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+  gap: 16px;
   margin-top: 22px;
 }
 
@@ -200,13 +200,15 @@ input:focus-visible,
   border: 1px solid var(--line);
   box-shadow: 0 1px 3px rgba(14, 31, 61, 0.06);
   border-radius: var(--r) var(--r) var(--r) var(--r-sq);
-  padding: 18px;
+  padding: 20px 22px;
   color: var(--text);
-  font-size: 1rem;
+  font-size: 1.05rem;
+  line-height: 1.4;
   cursor: pointer;
-  font-weight: 600;
-  transition: border-color 0.15s, background 0.15s;
+  font-weight: 700;
+  transition: border-color 0.15s, background 0.15s, box-shadow 0.15s;
 }
+.dossier-card:hover { box-shadow: 0 4px 14px rgba(14, 31, 61, 0.1); }
 
 .dossier-card:hover {
   border-color: var(--cam);
@@ -217,12 +219,13 @@ input:focus-visible,
   display: flex;
   gap: 10px;
   align-items: center;
-  margin-top: 12px;
-  font-size: 0.8rem;
+  margin-top: 14px;
+  font-size: 0.84rem;
   color: var(--muted);
   flex-wrap: wrap;
   font-weight: 400;
 }
+.card-meta .chip { font-size: 0.74rem; padding: 4px 11px; }
 
 /* ---------- Chips trạng thái ---------- */
 .chip {
@@ -935,7 +938,7 @@ button.danger:hover { border-color: var(--bad); color: var(--bad); }
 .reviewed-ico { color: var(--cam-text); vertical-align: -1px; }
 .banner { display: flex; align-items: flex-start; gap: 8px; flex-direction: column; }
 .banner.error, .banner.warn { flex-direction: row; align-items: center; }
-.card-customer { display: inline-flex; align-items: center; gap: 5px; }
+.card-customer { display: inline-flex; align-items: center; gap: 6px; font-size: 0.92rem; margin-top: 6px; }
 .dossier-sub { display: flex; align-items: center; gap: 6px; }
 
 /* ---------- Landing (trang nhập mã) ---------- */
