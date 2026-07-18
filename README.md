@@ -152,6 +152,44 @@ Chi tiết đầy đủ (sơ đồ mermaid, pipeline, data model, lý do chọn 
 - API khóa bằng access code từ tầng Worker; RLS bật trên mọi bảng; retry 3 lần có backoff khi model flake
 - **Lộ trình distillation**: mỗi trường được người phê duyệt là một nhãn ground truth kèm bbox — review queue chính là dây chuyền gán nhãn. Đủ dữ liệu vận hành thì các loại chứng từ layout ổn định chuyển dần sang extractor PyTorch chuyên biệt chạy on-prem (dữ liệu không rời ngân hàng, chi phí biên tiệm cận 0), Gemini rút về làm lưới an toàn cho ca khó
 
+## An toàn AI, grounding & độ tin cậy
+
+Thiết kế theo nguyên tắc: **AI không được phép nói mà không chỉ tay.**
+
+- **Không suy diễn**: trường không đọc được thì để trống + cảnh báo, không đoán; cảnh báo thiếu chữ ký/con dấu do model tự phát hiện được ghi rõ trên từng chứng từ
+- **Grounding bằng bounding box**: mọi giá trị trích xuất phải kèm `box_2d` trỏ về vị trí trên bản gốc, lưu trong Postgres cùng giá trị — người duyệt kiểm chứng bằng mắt trong một giây
+- **Trọng tài deterministic**: đối chiếu chéo chạy rule thuần TypeScript theo từ điển trường chuẩn, không dùng model — bộ phận bắt sai lệch không được phép tự sai lệch; mọi cảnh báo giải thích được
+- **Human-in-the-loop có dấu vết**: trường tin cậy thấp chờ người duyệt; mọi hiệu chỉnh (kể cả nhập tay khi mọi bản đều sai) ghi nhật ký kiểm toán ai-sửa-gì-khi-nào
+- **Bảo mật**: access code chặn từ tầng Worker, RLS bật trên mọi bảng, file scan trong private bucket, **không tồn tại credential file nào** (Cloud Run chạy service account ADC), model flake retry 3 lần có backoff
+- **Dữ liệu demo 100% hư cấu có watermark** — không PII thật trong toàn bộ hệ thống
+
+## Mô hình kinh doanh & lộ trình pilot
+
+**Đơn vị kinh tế**: chi phí AI < 500đ/bộ hồ sơ (đo thật, hai lớp cache) — mỗi 10.000 bộ/tháng tốn ~5 triệu đồng AI, đổi lấy hàng nghìn giờ công nhập liệu. Biên gộp phần mềm > 90%.
+
+**Ba nguồn thu**: (1) phí xử lý theo bộ hồ sơ — SaaS theo lượt; (2) gói tích hợp core-banking một lần — adapter Intellect/ESB, mapping trường theo nghiệp vụ; (3) thuê bao vận hành theo chi nhánh/tháng — dashboard, audit, SLA.
+
+**Lộ trình pilot với SHB**:
+
+| Mốc | Nội dung | KPI |
+| --- | --- | --- |
+| 2 tuần | Sandbox trên hồ sơ ẩn danh SHB | đo accuracy trên dữ liệu thật ngân hàng |
+| 3 tháng | Pilot một chi nhánh, luồng vay cá nhân | 70% trường tự động, đo giờ công tiết kiệm |
+| 6 tháng | Distill sang extractor PyTorch on-prem (nhãn từ chính review queue), mở rộng SWIFT/TT + BCTC doanh nghiệp | chi phí biên tiệm cận 0, dữ liệu không rời ngân hàng |
+
+**Thị trường**: bắt đầu từ SHB → nhân rộng khối ngân hàng thương mại Việt Nam; cùng một lõi IDP + từ điển trường cấu hình được dùng cho bảo hiểm, chứng khoán, công ty tài chính.
+
+## Đối chiếu tiêu chí chấm điểm
+
+| Tiêu chí BTC | Bằng chứng trong repo |
+| --- | --- |
+| Chất lượng triển khai kỹ thuật (20đ) | Live production + [số liệu đo thật](#số-liệu-đo-thật-không-phải-ước-lượng) có script tái lập ([`metrics/`](metrics/)), xử lý song song, cache 2 lớp |
+| Kiến trúc AI-Native & Đổi mới (20đ) | AI là lõi pipeline: PyTorch router → Gemini extract → cross-check ([`.claude/ARCHITECTURE.md`](.claude/ARCHITECTURE.md)); flywheel distillation |
+| Khả thi kinh doanh & Pilot (20đ) | [Mô hình kinh doanh & lộ trình pilot](#mô-hình-kinh-doanh--lộ-trình-pilot) ngay trên đây |
+| UX AI-Native (15đ) | Truy vết bbox click-to-highlight, so sánh 2 bản gốc, nhập tay có kiểm soát, tiến độ thời gian thực, [hướng dẫn 2 phút](#hướng-dẫn-sử-dụng-2-phút) |
+| An toàn AI & Grounding (15đ) | [Mục riêng phía trên](#an-toàn-ai-grounding--độ-tin-cậy) |
+| Trình bày (10đ) | [`docs/PITCH.md`](docs/PITCH.md) + deck [`docs/DocFlow-pitch-DemoDay.pptx`](docs/DocFlow-pitch-DemoDay.pptx) + video demo có thuyết minh |
+
 ## Chạy local
 
 ```bash

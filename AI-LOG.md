@@ -88,4 +88,17 @@
 - Rà toàn bộ đề SHB #195: mọi deliverable đã phủ; README thêm bảng đối chiếu
   đề ↔ tính năng + lý giải chọn grounding bbox thay RAG.
 
+### Phiên 8 — Sat 18/07 tối (Claude Code)
+- Card bộ hồ sơ: số chứng từ tách dòng riêng trên hàng tag (feedback screenshot).
+- Deck 12 slide: thêm slide flywheel distillation; xuất docs/DocFlow-pitch-DemoDay.pptx
+  bằng python-pptx (không có skill ppt — tự dựng, tự check overflow tự động).
+- Hậu kỳ video demo bằng ffmpeg + Pillow: 10 title lower-third skin SHB đặt theo
+  timeline (AI tự "xem" video qua frame để khớp cảnh), end card, hạ 1080p.
+- Phát hiện audio gốc là tiếng team nói chuyện (Gemini nghe hộ) → thay bằng thuyết minh
+  tiếng Việt Cloud TTS Chirp3-HD: 12 đoạn khớp cửa sổ thời gian, tự chỉnh tốc độ đọc,
+  verify lại bằng Gemini. Ra demo/DocFlow-demo-final-voiced.mp4 (3:26).
+- Reverse-engineer bảng xếp hạng hub (Top 20 theo điểm checkpoint mới nhất, cập nhật 2h/lần)
+  → xác nhận barem 6 tiêu chí 20/20/20/15/15/10; README bổ sung mục An toàn AI & grounding,
+  Mô hình kinh doanh & lộ trình pilot, bảng đối chiếu tiêu chí chấm điểm.
+
 <!-- Thêm phiên mới theo format trên. Mỗi phiên: thời gian, việc AI làm, file liên quan. -->
