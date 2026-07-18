@@ -587,6 +587,10 @@ app.get('/api/stats', async (c) => {
       ? Math.round((100 * fields.filter((f) => !f.human_reviewed).length) / fields.length)
       : 100,
     avg_extract_ms: ms.length ? Math.round(ms.reduce((a, b) => a + b, 0) / ms.length) : null,
+    // trung vị phản ánh trải nghiệm thực hơn: trung bình bị kéo lên bởi các lượt retry khi model flake
+    p50_extract_ms: ms.length
+      ? [...ms].sort((a, b) => a - b)[Math.floor((ms.length - 1) / 2)]
+      : null,
     critical_alerts: alerts.filter((a) => a.severity === 'critical').length,
   })
 })

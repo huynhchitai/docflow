@@ -146,6 +146,7 @@ export type Stats = {
   fields_total: number
   fields_auto_pct: number
   avg_extract_ms: number | null
+  p50_extract_ms: number | null
   critical_alerts: number
 }
 

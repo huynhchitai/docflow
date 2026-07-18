@@ -263,7 +263,7 @@ function DossierList({ onOpen, onFields, onGuide }: { onOpen: (id: string) => vo
           <div className="stat"><span className="stat-n">{stats.documents_done}</span><span className="stat-l">chứng từ đã xử lý</span></div>
           <div className="stat"><span className="stat-n">{stats.fields_total}</span><span className="stat-l">trường trích xuất</span></div>
           <div className="stat"><span className="stat-n">{stats.fields_auto_pct}%</span><span className="stat-l">tự động, không sửa tay</span></div>
-          <div className="stat"><span className="stat-n">{stats.avg_extract_ms != null ? (stats.avg_extract_ms / 1000).toFixed(1) + 's' : '—'}</span><span className="stat-l">TB / chứng từ</span></div>
+          <div className="stat" title="Trung vị thời gian trích xuất — trung bình bị kéo lên bởi các lượt retry khi model chập chờn"><span className="stat-n">{stats.p50_extract_ms != null ? (stats.p50_extract_ms / 1000).toFixed(1) + 's' : '—'}</span><span className="stat-l">P50 / chứng từ</span></div>
           <div className={`stat ${stats.critical_alerts ? 'stat-bad' : ''}`}><span className="stat-n">{stats.critical_alerts}</span><span className="stat-l">cảnh báo nghiêm trọng</span></div>
         </div>
       )}
