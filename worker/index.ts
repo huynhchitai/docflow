@@ -107,8 +107,7 @@ Trích các trường nghiệp vụ quan trọng nhất theo loại chứng từ
 số tiền, kỳ hạn, lãi suất, tài sản bảo đảm, các trường MT103 :20:/:32A:/:50K:/:59:...).
 Tuyệt đối không bịa: trường không đọc được thì bỏ qua hoặc đưa vào warnings.`
 
-async function fileToB64(file: File): Promise<string> {
-  const bytes = new Uint8Array(await file.arrayBuffer())
+function bytesToB64(bytes: Uint8Array): string {
   let binary = ''
   const CHUNK = 0x8000
   for (let i = 0; i < bytes.length; i += CHUNK) {
@@ -117,9 +116,25 @@ async function fileToB64(file: File): Promise<string> {
   return btoa(binary)
 }
 
+async function sha256hex(data: ArrayBuffer | Uint8Array): Promise<string> {
+  const d = await crypto.subtle.digest('SHA-256', data as ArrayBuffer)
+  return [...new Uint8Array(d)].map((b) => b.toString(16).padStart(2, '0')).join('')
+}
+
 async function extractFile(env: Env, file: File): Promise<ExtractResult> {
   const keysList = (await mergedSpecs(env)).map((f) => `${f.key} (${f.label})`).join(', ')
   const prompt = EXTRACTION_PROMPT.replace('__CANON_KEYS__', keysList)
+
+  // Cache kết quả theo (hash file + hash prompt): file trùng → 0 chi phí Gemini, phản hồi tức thì.
+  const buf = await file.arrayBuffer()
+  const cacheKey = new Request(
+    `https://cache.docflow.internal/extract/${await sha256hex(buf)}/${(await sha256hex(new TextEncoder().encode(prompt))).slice(0, 16)}`,
+  )
+  const cached = await caches.default.match(cacheKey)
+  if (cached) {
+    const r = (await cached.json()) as ExtractResult
+    return { ...r, filename: file.name, size_bytes: file.size }
+  }
   const hasCreds = Boolean(
     (env.GEMINI_PROXY_URL && env.GEMINI_PROXY_KEY) || env.GCP_SERVICE_ACCOUNT_KEY || env.GEMINI_API_KEY,
   )
@@ -137,7 +152,7 @@ async function extractFile(env: Env, file: File): Promise<ExtractResult> {
       warnings: ['MOCK MODE — chưa cấu hình credentials.'],
     }
   }
-  const dataB64 = await fileToB64(file)
+  const dataB64 = bytesToB64(new Uint8Array(buf))
 
   // PyTorch router: phân loại trước để định tuyến schema + gợi ý cho Gemini
   let classifier: ExtractResult['classifier'] = null
@@ -175,7 +190,7 @@ async function extractFile(env: Env, file: File): Promise<ExtractResult> {
     if (parsed.fields?.length) break // Gemini thỉnh thoảng trả rỗng — thử tối đa 3 lần
     await new Promise((r) => setTimeout(r, 800 * (attempt + 1)))
   }
-  return {
+  const result: ExtractResult = {
     mode: 'gemini',
     doc_type: parsed.doc_type ?? classifier?.doc_type ?? 'other',
     doc_type_confidence: parsed.doc_type_confidence ?? 0,
@@ -185,6 +200,16 @@ async function extractFile(env: Env, file: File): Promise<ExtractResult> {
     warnings: parsed.warnings ?? [],
     classifier,
   }
+  // Chỉ cache kết quả tốt (có trường) — 7 ngày
+  if (result.fields.length) {
+    await caches.default.put(
+      cacheKey,
+      new Response(JSON.stringify(result), {
+        headers: { 'Content-Type': 'application/json', 'Cache-Control': 'public, max-age=604800' },
+      }),
+    )
+  }
+  return result
 }
 
 

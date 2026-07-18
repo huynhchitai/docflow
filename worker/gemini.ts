@@ -105,8 +105,9 @@ async function generateDirect(env: GeminiEnv, args: GenerateArgs): Promise<strin
       {
         role: 'user',
         parts: [
-          { inline_data: { mime_type: args.mimeType, data: args.dataB64 } },
+          // prompt đứng trước: instruction giống nhau giữa các call → Vertex implicit caching
           { text: args.prompt },
+          { inline_data: { mime_type: args.mimeType, data: args.dataB64 } },
         ],
       },
     ],

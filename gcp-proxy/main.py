@@ -85,13 +85,15 @@ async def generate(req: Request):
             {
                 "role": "user",
                 "parts": [
+                    # prompt trước, file sau: phần instruction lặp lại giữa các call
+                    # nằm ở prefix -> Vertex implicit caching giảm chi phí token
+                    {"text": body["prompt"]},
                     {
                         "inline_data": {
                             "mime_type": body["mimeType"],
                             "data": body["dataB64"],
                         }
                     },
-                    {"text": body["prompt"]},
                 ],
             }
         ],
