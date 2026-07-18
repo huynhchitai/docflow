@@ -1,4 +1,4 @@
-# AI Collaboration Log — DocFlow (team megalondon)
+# AI Collaboration Log — DocFlow (team OCanbubu)
 
 > Yêu cầu BTC: "For online AI tools share chat session links. For desktop tools include
 > session files such as `~/.claude/projects/<project>`". File này là mục lục con người đọc được;

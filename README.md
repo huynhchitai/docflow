@@ -2,7 +2,7 @@
 
 **Hồ sơ tín dụng: từ scan đến core-banking trong vài phút — trích xuất có truy vết nguồn, không bịa số liệu.**
 
-Bài dự thi Vietnam AI Innovation Challenge 2026 · Đề SHB #195 — Intelligent Document Processing · Track Tài chính/Ngân hàng · Team **megalondon**
+Bài dự thi Vietnam AI Innovation Challenge 2026 · Đề SHB #195 — Intelligent Document Processing · Track Tài chính/Ngân hàng · Team **OCanbubu**
 
 > 🔗 **Demo:** https://docflow.prismtechemails.workers.dev
 > Mã truy cập: xem trong hồ sơ Checkpoint 2 trên hub BTC (mục credentials).
@@ -78,6 +78,6 @@ Cần Node 22+. Schema DB: chạy lần lượt các file trong [`supabase/migra
 
 Toàn bộ code sinh bởi AI trong cửa sổ 48h của hackathon. Nhật ký cộng tác AI đầy đủ theo từng phiên: [`AI-LOG.md`](AI-LOG.md) (kèm session files Claude Code nộp trong final submission).
 
-## Team megalondon
+## Team OCanbubu
 
 Vietnam AI Innovation Challenge 2026 · Đà Nẵng · 17–19/07/2026

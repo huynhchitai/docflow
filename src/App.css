@@ -697,3 +697,38 @@ footer {
   letter-spacing: 2px;
   text-align: center;
 }
+
+/* ---------- So sánh 2 nguồn cạnh nhau ---------- */
+.modal-body.compare-body {
+  max-width: 1240px;
+}
+
+.compare-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+  padding: 14px 16px;
+}
+
+@media (max-width: 900px) {
+  .compare-grid { grid-template-columns: 1fr; }
+}
+
+.compare-pane .viewer { border-color: var(--bad); }
+
+.compare-label {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 6px;
+}
+
+.compare-value {
+  font-family: var(--mono);
+  font-weight: 600;
+  color: var(--bad);
+  background: var(--bad-bg);
+  padding: 2px 10px;
+  border-radius: 8px 8px 8px var(--r-sq);
+}

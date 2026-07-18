@@ -29,6 +29,8 @@ const PROFILE_SPECS: { name: string; label: string; keys: RegExp; norm: (s: stri
   { name: 'income', label: 'Thu nhập', keys: /income|thu_nhap|salary/i, norm: (s) => s.replace(/\D/g, '') },
 ]
 
+type Hit = { field: Field; doc: Doc }
+
 type ProfileEntry = {
   label: string
   value: string
@@ -36,19 +38,22 @@ type ProfileEntry = {
   consistent: boolean
   field: Field
   doc: Doc
+  // khi lệch: cặp bằng chứng đầu tiên mâu thuẫn nhau để so sánh cạnh nhau
+  conflict?: { a: Hit; b: Hit }
 }
 
 function buildProfile(docs: Doc[]): ProfileEntry[] {
   const out: ProfileEntry[] = []
   for (const spec of PROFILE_SPECS) {
-    const hits: { field: Field; doc: Doc }[] = []
+    const hits: Hit[] = []
     for (const doc of docs) {
       const f = doc.fields.find((f) => spec.keys.test(f.key) && f.value.trim())
       if (f) hits.push({ field: f, doc })
     }
     if (!hits.length) continue
     const canon = spec.norm(hits[0].field.value)
-    const consistent = hits.every((h) => spec.norm(h.field.value) === canon)
+    const differing = hits.find((h) => spec.norm(h.field.value) !== canon)
+    const consistent = !differing
     // Ưu tiên bản đã human-review, sau đó confidence cao nhất
     const best = [...hits].sort(
       (a, b) =>
@@ -62,12 +67,21 @@ function buildProfile(docs: Doc[]): ProfileEntry[] {
       consistent,
       field: best.field,
       doc: best.doc,
+      conflict: differing ? { a: hits[0], b: differing } : undefined,
     })
   }
   return out
 }
 
-function CustomerProfile({ docs, onPick }: { docs: Doc[]; onPick: (h: Highlight) => void }) {
+function CustomerProfile({
+  docs,
+  onPick,
+  onCompare,
+}: {
+  docs: Doc[]
+  onPick: (h: Highlight) => void
+  onCompare: (label: string, a: Hit, b: Hit) => void
+}) {
   const entries = buildProfile(docs)
   if (!entries.length) return null
   return (
@@ -83,15 +97,17 @@ function CustomerProfile({ docs, onPick }: { docs: Doc[]; onPick: (h: Highlight)
             key={e.label}
             className={`profile-item ${e.consistent ? '' : 'mismatch'}`}
             onClick={() =>
-              onPick({
-                docId: e.doc.id,
-                mimeType: e.doc.mime_type,
-                page: e.field.page,
-                box: e.field.box_2d,
-                label: e.label,
-              })
+              e.conflict
+                ? onCompare(e.label, e.conflict.a, e.conflict.b)
+                : onPick({
+                    docId: e.doc.id,
+                    mimeType: e.doc.mime_type,
+                    page: e.field.page,
+                    box: e.field.box_2d,
+                    label: e.label,
+                  })
             }
-            title={e.consistent ? `Khớp trên ${e.sources} chứng từ` : 'Giá trị LỆCH giữa các chứng từ!'}
+            title={e.consistent ? `Khớp trên ${e.sources} chứng từ` : 'LỆCH — click để so sánh 2 bản gốc cạnh nhau'}
           >
             <span className="profile-label">
               {e.label}
@@ -202,6 +218,7 @@ function Dossier({ id, onBack }: { id: string; onBack: () => void }) {
   const [hl, setHl] = useState<Highlight | null>(null)
   const [editing, setEditing] = useState<{ id: string; value: string } | null>(null)
   const [exported, setExported] = useState<object | null>(null)
+  const [compare, setCompare] = useState<{ label: string; a: Hit; b: Hit } | null>(null)
   const inputRef = useRef<HTMLInputElement>(null)
 
   const refresh = useCallback(() => {
@@ -287,7 +304,7 @@ function Dossier({ id, onBack }: { id: string; onBack: () => void }) {
         {busy ? '⏳ Đang trích xuất — Gemini đang đọc từng trang…' : '📄 Thả thêm chứng từ vào đây (PDF/ảnh, chọn được nhiều file)'}
       </section>
 
-      <CustomerProfile docs={d.documents} onPick={setHl} />
+      <CustomerProfile docs={d.documents} onPick={setHl} onCompare={(label, x, y) => setCompare({ label, a: x, b: y })} />
 
       <div className="detail-cols">
         <div className="docs-col">
@@ -370,6 +387,36 @@ function Dossier({ id, onBack }: { id: string; onBack: () => void }) {
         </div>
       </div>
 
+      {compare && (
+        <div className="modal" onClick={() => setCompare(null)}>
+          <div className="modal-body compare-body" onClick={(e) => e.stopPropagation()}>
+            <div className="viewer-head">
+              ⚖️ So sánh nguồn — {compare.label}: "{compare.a.field.value}" ≠ "{compare.b.field.value}"
+            </div>
+            <div className="compare-grid">
+              {[compare.a, compare.b].map((h, i) => (
+                <div key={i} className="compare-pane">
+                  <div className="compare-label">
+                    <span className="file">{h.doc.filename}</span>
+                    <span className="compare-value">{h.field.value}</span>
+                  </div>
+                  <DocViewer
+                    hl={{
+                      docId: h.doc.id,
+                      mimeType: h.doc.mime_type,
+                      page: h.field.page,
+                      box: h.field.box_2d,
+                      label: compare.label,
+                    }}
+                  />
+                </div>
+              ))}
+            </div>
+            <button onClick={() => setCompare(null)}>Đóng</button>
+          </div>
+        </div>
+      )}
+
       {exported && (
         <div className="modal" onClick={() => setExported(null)}>
           <div className="modal-body" onClick={(e) => e.stopPropagation()}>
@@ -420,7 +467,7 @@ function AccessGate({ onDone }: { onDone: () => void }) {
           {checking ? 'Đang kiểm tra…' : 'Vào hệ thống'}
         </button>
       </form>
-      {bad && <div className="banner error">⚠️ Mã không đúng — thử lại hoặc liên hệ team megalondon.</div>}
+      {bad && <div className="banner error">⚠️ Mã không đúng — thử lại hoặc liên hệ team OCanbubu.</div>}
     </div>
   )
 }
@@ -438,7 +485,7 @@ function App() {
         <Dossier id={view.id} onBack={() => setView({ page: 'list' })} />
       )}
       <footer>
-        DocFlow — Vietnam AI Innovation Challenge 2026 · SHB Intelligent Document Processing · team megalondon
+        DocFlow — Vietnam AI Innovation Challenge 2026 · SHB Intelligent Document Processing · team OCanbubu
       </footer>
     </main>
   )
