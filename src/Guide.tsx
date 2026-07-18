@@ -4,6 +4,17 @@ import {
 } from 'lucide-react'
 
 // ============ Hướng dẫn sử dụng tương tác ============
+
+export function HeroStats() {
+  return (
+    <div className="guide-hero">
+      <div className="guide-stat"><span className="stat-n">95%</span><span className="stat-l">trường trích đúng</span></div>
+      <div className="guide-stat"><span className="stat-n">26s</span><span className="stat-l">median / chứng từ</span></div>
+      <div className="guide-stat"><span className="stat-n">&lt;500đ</span><span className="stat-l">chi phí AI / bộ hồ sơ</span></div>
+      <div className="guide-stat"><span className="stat-n">0</span><span className="stat-l">số liệu không nguồn gốc</span></div>
+    </div>
+  )
+}
 // Không gọi API — xem được TRƯỚC khi đăng nhập (giám khảo vào là hiểu ngay sản phẩm).
 
 const STEPS = [
@@ -183,12 +194,7 @@ export function Guide({ onBack }: { onBack: () => void }) {
         <strong>Hướng dẫn sử dụng</strong>
       </div>
 
-      <div className="guide-hero">
-        <div className="guide-stat"><span className="stat-n">95%</span><span className="stat-l">field trích đúng</span></div>
-        <div className="guide-stat"><span className="stat-n">26s</span><span className="stat-l">median / chứng từ</span></div>
-        <div className="guide-stat"><span className="stat-n">&lt;500đ</span><span className="stat-l">chi phí AI / bộ hồ sơ</span></div>
-        <div className="guide-stat"><span className="stat-n">0</span><span className="stat-l">số liệu không nguồn gốc</span></div>
-      </div>
+      <HeroStats />
 
       <div className="guide-steps" role="tablist" aria-label="Các bước sử dụng">
         {STEPS.map((s, i) => {

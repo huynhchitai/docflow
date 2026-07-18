@@ -937,3 +937,41 @@ button.danger:hover { border-color: var(--bad); color: var(--bad); }
 .banner.error, .banner.warn { flex-direction: row; align-items: center; }
 .card-customer { display: inline-flex; align-items: center; gap: 5px; }
 .dossier-sub { display: flex; align-items: center; gap: 6px; }
+
+/* ---------- Landing (trang nhập mã) ---------- */
+.landing {
+  display: grid;
+  grid-template-columns: 1.35fr 1fr;
+  gap: 40px;
+  align-items: center;
+  min-height: 78vh;
+}
+@media (max-width: 900px) { .landing { grid-template-columns: 1fr; gap: 24px; } }
+
+.landing-brand { display: flex; align-items: center; }
+.landing-brand h1 { font-size: 2.6rem; font-weight: 800; letter-spacing: -1px; margin: 0; }
+.landing-brand h1 span { color: var(--cam-text); }
+
+.landing-info .tagline { font-size: 1.05rem; margin-top: 10px; max-width: 56ch; }
+.landing-info .guide-hero { margin-top: 22px; }
+
+.landing-feats { list-style: none; margin: 22px 0 0; padding: 0; }
+.landing-feats li {
+  display: flex; align-items: flex-start; gap: 10px;
+  color: var(--text); font-size: 0.95rem; margin-bottom: 10px;
+}
+.landing-feats li svg { color: var(--cam-text); flex-shrink: 0; margin-top: 3px; }
+
+.landing-sub { color: var(--muted); font-size: 0.8rem; margin-top: 22px; }
+
+.landing-login {
+  background: var(--navy-800);
+  border: 1px solid var(--line);
+  border-radius: var(--r) var(--r) var(--r) var(--r-sq);
+  padding: 28px 26px;
+  box-shadow: 0 8px 30px rgba(14, 31, 61, 0.08);
+}
+.landing-login h3 { margin: 0 0 6px; font-size: 1.15rem; font-weight: 800; }
+.landing-login-sub { color: var(--muted); font-size: 0.9rem; margin: 0 0 16px; }
+.landing-login .gate-form { display: flex; flex-direction: column; gap: 10px; }
+.landing-login .gate-guide { margin-top: 14px; width: 100%; justify-content: center; }

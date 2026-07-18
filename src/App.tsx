@@ -13,11 +13,11 @@ import {
 } from './api'
 import { DocViewer, type Highlight } from './DocViewer'
 import { CANONICAL_FIELDS, normalize } from '../shared/fields'
-import { Guide } from './Guide'
+import { Guide, HeroStats } from './Guide'
 import { ACCESS_KEY } from './api'
 import {
   AlertTriangle, ArrowLeft, BookOpen, Check, Copy, Flame, FolderPlus, Landmark, OctagonAlert,
-  Pencil, Scale, Settings2, Timer, Trash2, User as UserIcon,
+  Pencil, Scale, ScanSearch, Settings2, ShieldAlert, Timer, Trash2, User as UserIcon,
 } from 'lucide-react'
 
 function confidenceClass(c: number) {
@@ -614,115 +614,49 @@ function AccessGate({ onDone, onGuide }: { onDone: () => void; onGuide: () => vo
     }
   }
   return (
-    <div className="gate">
-      <div className="mark big-mark" aria-hidden="true" />
-      <h1>
-        Doc<span>Flow</span>
-      </h1>
-      <p className="tagline">Khu vực nghiệp vụ. Nhập mã truy cập được cấp để tiếp tục.</p>
-      <form className="gate-form" onSubmit={submit}>
-        <input
-          type="password"
-          value={code}
-          autoFocus
-          placeholder="Mã truy cập"
-          onChange={(e) => setCode(e.target.value)}
-        />
-        <button type="submit" disabled={checking}>
-          {checking ? 'Đang kiểm tra…' : 'Vào hệ thống'}
-        </button>
-      </form>
-      {bad && <div className="banner error"><AlertTriangle size={14} /> Mã truy cập không đúng. Vui lòng thử lại hoặc liên hệ đội OCanbubu.</div>}
-      <button className="ghost gate-guide" onClick={onGuide}><BookOpen size={15} /> Xem hướng dẫn sử dụng (không cần mã)</button>
-    </div>
-  )
-}
-
-// ============ Cấu hình trường dữ liệu ============
-function FieldSpecsPage({ onBack }: { onBack: () => void }) {
-  const [list, setList] = useState<FieldSpec[] | null>(null)
-  const [error, setError] = useState<string | null>(null)
-  const [form, setForm] = useState({ label: '', key: '', aliases: '', norm: 'text_loose' as FieldSpec['norm'], crosscheck: false, profile: true })
-  const [saving, setSaving] = useState(false)
-
-  const refresh = useCallback(() => {
-    api.fieldSpecs().then(setList).catch((e) => setError(String(e)))
-  }, [])
-  useEffect(refresh, [refresh])
-
-  const slugify = (s: string) =>
-    s.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/đ/g, 'd').replace(/[^a-z0-9]+/g, '_').replace(/^_|_$/g, '')
-
-  const add = async (e: React.FormEvent) => {
-    e.preventDefault()
-    if (!form.label.trim() || saving) return
-    setSaving(true)
-    setError(null)
-    try {
-      await api.addFieldSpec({ ...form, key: form.key.trim() || slugify(form.label) })
-      setForm({ label: '', key: '', aliases: '', norm: 'text_loose', crosscheck: false, profile: true })
-      refresh()
-    } catch (e2) {
-      setError(String(e2))
-    } finally {
-      setSaving(false)
-    }
-  }
-
-  return (
-    <>
-      <div className="detail-bar">
-        <button className="ghost" onClick={onBack}><ArrowLeft size={15} /> Danh sách</button>
-        <strong>Trường dữ liệu</strong>
+    <div className="landing">
+      <div className="landing-info">
+        <div className="landing-brand">
+          <div className="mark" aria-hidden="true" />
+          <h1>
+            Doc<span>Flow</span>
+          </h1>
+        </div>
+        <p className="tagline">
+          Hồ sơ tín dụng: từ bản scan đến core-banking trong vài phút — mọi trường dữ liệu đều
+          truy vết được về nguồn.
+        </p>
+        <HeroStats />
+        <ul className="landing-feats">
+          <li><Flame size={16} /> PyTorch phân loại chứng từ, Gemini trên Vertex AI trích xuất — 26 giây/chứng từ, xử lý song song</li>
+          <li><ScanSearch size={16} /> Chọn một trường bất kỳ — bản gốc mở đúng vị trí nguồn, khoanh vùng từng dòng</li>
+          <li><ShieldAlert size={16} /> Tự đối chiếu chéo giữa các chứng từ — cảnh báo trọng yếu khi số liệu mâu thuẫn</li>
+          <li><Landmark size={16} /> Xuất payload chuẩn CIF, sẵn sàng tích hợp core-banking qua adapter</li>
+        </ul>
+        <p className="landing-sub">
+          Bài dự thi Vietnam AI Innovation Challenge 2026 · Đề SHB — Intelligent Document Processing · Đội OCanbubu
+        </p>
       </div>
-      <p className="tagline">
-        AI được phép trích thêm trường ngoài danh sách (tự đặt key snake_case) — chúng hiển thị trong bảng chứng từ.
-        Nhưng chỉ trường khai báo ở đây mới được <b>tổng hợp lên thẻ khách hàng</b> và <b>đối chiếu chéo</b>.
-        Thêm trường mới có hiệu lực ngay với chứng từ upload sau đó — không cần deploy.
-      </p>
-      {error && <div className="banner error"><AlertTriangle size={14} /> {error}</div>}
 
-      <form className="spec-form" onSubmit={add}>
-        <input value={form.label} placeholder="Nhãn — vd: Mã số thuế" onChange={(e) => setForm({ ...form, label: e.target.value })} />
-        <input value={form.key} placeholder={`key: ${form.label ? slugify(form.label) : 'tu_dat_hoac_de_trong'}`} onChange={(e) => setForm({ ...form, key: e.target.value })} />
-        <select value={form.norm} onChange={(e) => setForm({ ...form, norm: e.target.value as FieldSpec['norm'] })}>
-          <option value="digits">Chỉ giữ chữ số (CCCD, tiền…)</option>
-          <option value="person_name">Tên người (bỏ dấu, hoa)</option>
-          <option value="text_loose">Chữ tự do</option>
-        </select>
-        <label className="check"><input type="checkbox" checked={form.crosscheck} onChange={(e) => setForm({ ...form, crosscheck: e.target.checked })} /> Đối chiếu chéo</label>
-        <label className="check"><input type="checkbox" checked={form.profile} onChange={(e) => setForm({ ...form, profile: e.target.checked })} /> Lên thẻ khách</label>
-        <button type="submit" disabled={saving}>{saving ? '…' : '+ Thêm'}</button>
-      </form>
-
-      {list === null ? (
-        <p className="hint-center">Đang tải…</p>
-      ) : (
-        <table className="spec-table">
-          <thead>
-            <tr><th>Key</th><th>Nhãn</th><th>Chuẩn hóa</th><th>Đối chiếu</th><th>Thẻ khách</th><th></th></tr>
-          </thead>
-          <tbody>
-            {list.map((f) => (
-              <tr key={f.key} className={f.built_in ? 'builtin' : ''}>
-                <td className="value">{f.key}</td>
-                <td>{f.label}</td>
-                <td className="src">{f.norm}</td>
-                <td>{f.crosscheck ? '✅' : '—'}</td>
-                <td>{f.profile ? '✅' : '—'}</td>
-                <td>
-                  {f.built_in ? (
-                    <span className="src">built-in</span>
-                  ) : (
-                    <button className="ghost small" onClick={() => f.id && api.deleteFieldSpec(f.id).then(refresh)}>Xóa</button>
-                  )}
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      )}
-    </>
+      <div className="landing-login">
+        <h3>Khu vực nghiệp vụ</h3>
+        <p className="landing-login-sub">Nhập mã truy cập được cấp để dùng thử với bộ hồ sơ mẫu.</p>
+        <form className="gate-form" onSubmit={submit}>
+          <input
+            type="password"
+            value={code}
+            autoFocus
+            placeholder="Mã truy cập"
+            onChange={(e) => setCode(e.target.value)}
+          />
+          <button type="submit" disabled={checking}>
+            {checking ? 'Đang kiểm tra…' : 'Vào hệ thống'}
+          </button>
+        </form>
+        {bad && <div className="banner error"><AlertTriangle size={14} /> Mã truy cập không đúng. Vui lòng thử lại hoặc liên hệ đội OCanbubu.</div>}
+        <button className="ghost gate-guide" onClick={onGuide}><BookOpen size={15} /> Xem hướng dẫn sử dụng (không cần mã)</button>
+      </div>
+    </div>
   )
 }
 
@@ -731,7 +665,7 @@ function App() {
   const [view, setView] = useState<{ page: 'list' } | { page: 'dossier'; id: string } | { page: 'fields' } | { page: 'guide' }>({ page: 'list' })
   if (!authed && view.page !== 'guide')
     return (
-      <main className="shell">
+      <main className="shell wide">
         <AccessGate onDone={() => setAuthed(true)} onGuide={() => setView({ page: 'guide' })} />
       </main>
     )
