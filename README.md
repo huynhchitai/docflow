@@ -4,7 +4,7 @@
 
 Bài dự thi Vietnam AI Innovation Challenge 2026 · Đề SHB #195 — Intelligent Document Processing · Track Tài chính/Ngân hàng · Team **OCanbubu**
 
-> 🔗 **Demo:** https://docflow.huynhchitai.com
+> **Demo:** https://docflow.huynhchitai.com
 > Mã truy cập: xem trong hồ sơ Checkpoint 2 trên hub BTC (mục credentials).
 >
 > *(English: AI document processing for Vietnamese bank credit dossiers — classify, extract with source-traceable bounding boxes, cross-check across documents, human review with audit trail, export to core banking. Built in 48h, 100% AI-generated code.)*
@@ -16,7 +16,7 @@ Bài dự thi Vietnam AI Innovation Challenge 2026 · Đề SHB #195 — Intelli
 Cán bộ tín dụng nhận một bộ hồ sơ vay gồm nhiều chứng từ scan (đơn vay, báo cáo tài chính, hợp đồng thế chấp, điện SWIFT/TT) và phải gõ lại hàng chục trường vào hệ thống. DocFlow thay việc gõ tay đó bằng một luồng duy nhất:
 
 1. **Thả cả bộ hồ sơ vào** — nhiều file PDF/ảnh một lúc, xử lý **song song**, scan điện thoại mờ/nghiêng vẫn đọc được
-2. **PyTorch router phân loại trước** (ResNet18 fine-tune, 120–290ms, đúng 4/4 loại @ 99–100%) → định tuyến schema và gợi ý cho Gemini trích xuất (p50 26 giây/chứng từ, đồng hồ ⏱ đo thật từng file)
+2. **PyTorch router phân loại trước** (ResNet18 fine-tune, 120–290ms, đúng 4/4 loại @ 99–100%) → định tuyến schema và gợi ý cho Gemini trích xuất (p50 26 giây/chứng từ, thời gian đo thực tế từng tệp)
 3. **Mọi con số đều truy vết được** — click một trường, bản scan gốc mở đúng vị trí, khoanh cam từng dòng
 4. **Tự đối chiếu chéo giữa các chứng từ** — CCCD/số tiền/kỳ hạn lệch nhau là báo đỏ CRITICAL; click ô lệch mở **hai bản gốc cạnh nhau** để đối chất; tên khách khai báo lúc tạo bộ cũng được đối chiếu với tên trên giấy
 5. **Người duyệt sửa tại chỗ** — double-click giá trị để sửa, mọi thay đổi ghi vào audit log; trường tin cậy thấp tự đánh vàng/đỏ
@@ -83,7 +83,7 @@ Mở [demo](https://docflow.huynhchitai.com), nhập mã truy cập, bấm **Và
 
 1. Gõ tên (vd: *Hồ sơ vay · Nguyễn Văn An*) rồi bấm **+ Tạo bộ hồ sơ**. Bỏ trống tên cũng được — hệ thống tự đặt theo ngày giờ.
 2. Thả file vào vùng **"Thả thêm chứng từ vào đây"** — chọn được nhiều file. Dùng thử bộ mẫu trong [`demo-data/`](demo-data/) (dữ liệu hư cấu, có cài sẵn một lỗi lệch CCCD để xem cảnh báo).
-3. Chờ dòng *"Đang trích xuất — Gemini đang đọc từng trang…"* chạy xong (mỗi chứng từ hiển thị ⏱ thời gian xử lý thật).
+3. Chờ dòng *"Đang trích xuất — Gemini đang đọc từng trang…"* chạy xong (mỗi chứng từ hiển thị thời gian xử lý thực tế).
 
 ### Đọc kết quả
 
@@ -101,7 +101,7 @@ Click bất kỳ trường nào (trong thẻ khách hàng hoặc bảng). Bản 
 
 ### Tự thêm trường dữ liệu (không cần dev)
 
-Bấm **⚙️ Trường dữ liệu** → điền nhãn (key tự sinh), chọn kiểu chuẩn hóa, tick "Đối chiếu chéo"/"Lên thẻ khách" → **+ Thêm**. Trường mới có hiệu lực ngay với chứng từ upload sau đó — prompt AI tự cập nhật. Trường built-in bị khóa để bảo vệ quy ước chung.
+Chọn **Trường dữ liệu** → điền nhãn (key tự sinh), chọn kiểu chuẩn hóa, tick "Đối chiếu chéo"/"Lên thẻ khách" → **+ Thêm**. Trường mới có hiệu lực ngay với chứng từ upload sau đó — prompt AI tự cập nhật. Trường built-in bị khóa để bảo vệ quy ước chung.
 
 ### Duyệt và xuất
 
@@ -121,7 +121,7 @@ Chi tiết đầy đủ (sơ đồ mermaid, pipeline, data model, lý do chọn 
 
 Điểm kiến trúc đáng chú ý:
 
-- **PyTorch là ROUTER, không phải đồ trang trí**: ResNet18 fine-tune tại sự kiện (`training/`), TorchScript serve trên Cloud Run, chạy TRƯỚC Gemini để định tuyến schema + gợi ý loại chứng từ vào prompt — kết quả lưu DB, hiển thị chip 🔥 trên từng chứng từ
+- **PyTorch là ROUTER, không phải đồ trang trí**: ResNet18 fine-tune tại sự kiện (`training/`), TorchScript serve trên Cloud Run, chạy TRƯỚC Gemini để định tuyến schema + gợi ý loại chứng từ vào prompt — kết quả lưu DB, hiển thị chip PyTorch trên từng chứng từ
 - **Vertex AI qua Cloud Run proxy chạy bằng service account ADC** — không tồn tại credential file nào trong hệ thống (org policy chặn SA key, và đó là điều tốt)
 - **Xử lý file song song ở Worker** — upload n chứng từ tốn thời gian của chứng từ chậm nhất, không phải tổng
 - **Bounding box `box_2d` chuẩn hóa 0–1000** trả thẳng từ Gemini trong structured output — giá trị nhiều dòng trả chùm box mỗi-dòng-một-khung; nguồn gốc mọi trường lưu trong Postgres cùng giá trị
