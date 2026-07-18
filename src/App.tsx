@@ -13,9 +13,10 @@ import {
 } from './api'
 import { DocViewer, type Highlight } from './DocViewer'
 import { CANONICAL_FIELDS, normalize } from '../shared/fields'
+import { Guide } from './Guide'
 import { ACCESS_KEY } from './api'
 import {
-  ArrowLeft, Flame, FolderPlus, Landmark, Pencil,
+  ArrowLeft, BookOpen, Check, Copy, Flame, FolderPlus, Landmark, Pencil,
   Scale, Settings2, Timer, Trash2, User as UserIcon,
 } from 'lucide-react'
 
@@ -215,7 +216,7 @@ function DossierFormModal({
 }
 
 // ============ Danh sách bộ hồ sơ ============
-function DossierList({ onOpen, onFields }: { onOpen: (id: string) => void; onFields: () => void }) {
+function DossierList({ onOpen, onFields, onGuide }: { onOpen: (id: string) => void; onFields: () => void; onGuide: () => void }) {
   const [rows, setRows] = useState<DossierSummary[] | null>(null)
   const [stats, setStats] = useState<Stats | null>(null)
   const [showCreate, setShowCreate] = useState(false)
@@ -264,6 +265,7 @@ function DossierList({ onOpen, onFields }: { onOpen: (id: string) => void; onFie
       <div className="list-bar">
         <button onClick={() => setShowCreate(true)}><FolderPlus size={15} /> Tạo bộ hồ sơ</button>
         <span className="spacer" />
+        <button className="ghost" onClick={onGuide}><BookOpen size={15} /> Hướng dẫn</button>
         <button className="ghost" onClick={onFields}><Settings2 size={15} /> Trường dữ liệu</button>
       </div>
 
@@ -311,6 +313,7 @@ function Dossier({ id, onBack }: { id: string; onBack: () => void }) {
   const [hl, setHl] = useState<Highlight | null>(null)
   const [editing, setEditing] = useState<{ id: string; value: string } | null>(null)
   const [exported, setExported] = useState<object | null>(null)
+  const [copied, setCopied] = useState(false)
   const [compare, setCompare] = useState<{ label: string; a: Hit; b: Hit } | null>(null)
   const [showEdit, setShowEdit] = useState(false)
   const [savingEdit, setSavingEdit] = useState(false)
@@ -572,7 +575,19 @@ function Dossier({ id, onBack }: { id: string; onBack: () => void }) {
           <div className="modal-body" onClick={(e) => e.stopPropagation()}>
             <div className="viewer-head">🏦 Payload gửi core-banking (schema shb.core-banking.loan-intake.v1)</div>
             <pre>{JSON.stringify(exported, null, 2)}</pre>
-            <button onClick={() => setExported(null)}>Đóng</button>
+            <div className="modal-actions">
+              <button
+                className="ghost"
+                onClick={async () => {
+                  await navigator.clipboard.writeText(JSON.stringify(exported, null, 2))
+                  setCopied(true)
+                  setTimeout(() => setCopied(false), 1600)
+                }}
+              >
+                {copied ? <><Check size={15} /> Đã copy</> : <><Copy size={15} /> Copy JSON</>}
+              </button>
+              <button onClick={() => setExported(null)}>Đóng</button>
+            </div>
           </div>
         </div>
       )}
@@ -580,7 +595,7 @@ function Dossier({ id, onBack }: { id: string; onBack: () => void }) {
   )
 }
 
-function AccessGate({ onDone }: { onDone: () => void }) {
+function AccessGate({ onDone, onGuide }: { onDone: () => void; onGuide: () => void }) {
   const [code, setCode] = useState('')
   const [checking, setChecking] = useState(false)
   const [bad, setBad] = useState(false)
@@ -618,6 +633,7 @@ function AccessGate({ onDone }: { onDone: () => void }) {
         </button>
       </form>
       {bad && <div className="banner error">⚠️ Mã không đúng — thử lại hoặc liên hệ team OCanbubu.</div>}
+      <button className="ghost gate-guide" onClick={onGuide}><BookOpen size={15} /> Xem hướng dẫn sử dụng (không cần mã)</button>
     </div>
   )
 }
@@ -712,15 +728,26 @@ function FieldSpecsPage({ onBack }: { onBack: () => void }) {
 
 function App() {
   const [authed, setAuthed] = useState(() => Boolean(localStorage.getItem(ACCESS_KEY)))
-  const [view, setView] = useState<{ page: 'list' } | { page: 'dossier'; id: string } | { page: 'fields' }>({ page: 'list' })
-  if (!authed) return <AccessGate onDone={() => setAuthed(true)} />
+  const [view, setView] = useState<{ page: 'list' } | { page: 'dossier'; id: string } | { page: 'fields' } | { page: 'guide' }>({ page: 'list' })
+  if (!authed && view.page !== 'guide')
+    return (
+      <main className="shell">
+        <AccessGate onDone={() => setAuthed(true)} onGuide={() => setView({ page: 'guide' })} />
+      </main>
+    )
   return (
     <main className="shell wide">
       <Header />
       {view.page === 'list' ? (
-        <DossierList onOpen={(id) => setView({ page: 'dossier', id })} onFields={() => setView({ page: 'fields' })} />
+        <DossierList
+          onOpen={(id) => setView({ page: 'dossier', id })}
+          onFields={() => setView({ page: 'fields' })}
+          onGuide={() => setView({ page: 'guide' })}
+        />
       ) : view.page === 'fields' ? (
         <FieldSpecsPage onBack={() => setView({ page: 'list' })} />
+      ) : view.page === 'guide' ? (
+        <Guide onBack={() => setView({ page: 'list' })} />
       ) : (
         <Dossier id={view.id} onBack={() => setView({ page: 'list' })} />
       )}

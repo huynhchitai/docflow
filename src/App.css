@@ -832,3 +832,83 @@ button.danger:hover { border-color: var(--bad); color: var(--bad); }
   padding: 2px 8px;
   border-radius: 6px 6px 6px var(--r-sq);
 }
+
+/* ---------- Hướng dẫn tương tác ---------- */
+.gate-guide { margin-top: 16px; }
+
+.guide-hero {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 10px;
+  margin-top: 18px;
+}
+
+.guide-stat {
+  background: linear-gradient(180deg, #fff8f1, var(--navy-800) 60%);
+  border: 1px solid #f4d9bd;
+  border-radius: var(--r) var(--r) var(--r) var(--r-sq);
+  padding: 12px 14px;
+}
+
+.guide-steps { display: flex; gap: 8px; margin-top: 20px; }
+
+.guide-step {
+  width: 44px; height: 44px;
+  display: inline-flex; align-items: center; justify-content: center;
+  background: var(--navy-800); color: var(--muted);
+  border: 1px solid var(--line); border-radius: 12px 12px 12px var(--r-sq);
+  padding: 0; cursor: pointer;
+}
+
+.guide-step.on { background: var(--cam); color: #4a2504; border-color: var(--cam); }
+
+.guide-detail {
+  background: var(--navy-800); border: 1px solid var(--line);
+  border-radius: var(--r) var(--r) var(--r) var(--r-sq);
+  padding: 16px 18px; margin-top: 10px;
+  box-shadow: 0 1px 3px rgba(14, 31, 61, 0.06);
+}
+
+.guide-detail h3 { margin: 0 0 8px; display: flex; align-items: center; gap: 8px; font-size: 1rem; }
+.guide-detail p { margin: 0 0 8px; }
+.guide-tip { color: var(--muted); font-size: 0.88rem; }
+.guide-nav { display: flex; align-items: center; gap: 12px; margin-top: 12px; }
+
+.guide-h3 { display: flex; align-items: center; gap: 8px; margin: 28px 0 10px; font-size: 1rem; }
+
+.minidemo { display: grid; grid-template-columns: 1fr 1.1fr; gap: 14px; align-items: start; }
+@media (max-width: 760px) { .minidemo { grid-template-columns: 1fr; } }
+
+.minidemo-hint { color: var(--muted); font-size: 0.85rem; margin: 0 0 8px; }
+
+.minidemo-field {
+  width: 100%; text-align: left; display: flex; flex-direction: column; gap: 2px;
+  background: var(--navy-800); border: 1px solid var(--line);
+  border-radius: 10px 10px 10px var(--r-sq); padding: 8px 12px; margin-bottom: 8px;
+  cursor: pointer; font-family: var(--font); position: relative;
+}
+.minidemo-field .conf { position: absolute; right: 10px; top: 10px; }
+.minidemo-field.on { border-color: var(--cam); background: #fff8f1; }
+
+.minidemo-doc { position: sticky; top: 16px; }
+.minidemo-paper {
+  position: relative; background: #fff; border: 1px solid var(--line);
+  border-radius: 8px; padding: 20px 18px; font-size: 0.82rem; line-height: 1.9;
+  box-shadow: 0 2px 10px rgba(14, 31, 61, 0.08); color: #222;
+  transform: rotate(-0.6deg);
+}
+.mp-title { text-align: center; font-weight: 800; margin-bottom: 8px; }
+.mp-dim { color: #888; }
+.minidemo-paper .hl-box { box-shadow: 0 0 0 4000px rgba(14, 31, 61, 0.18); }
+
+.guide-faq details {
+  background: var(--navy-800); border: 1px solid var(--line);
+  border-radius: 10px 10px 10px var(--r-sq); padding: 12px 16px; margin-bottom: 8px;
+}
+.guide-faq summary { cursor: pointer; font-weight: 600; }
+.guide-faq p { color: var(--muted); margin: 8px 0 0; font-size: 0.92rem; }
+
+.guide-cta { text-align: center; margin-top: 26px; }
+
+.modal-actions { display: flex; gap: 10px; margin: 0 16px; }
+.modal-body .modal-actions button { margin: 0; }
