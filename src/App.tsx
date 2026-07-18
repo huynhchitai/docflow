@@ -4,6 +4,7 @@ import {
   api,
   DOC_TYPE_LABELS,
   STATE_LABELS,
+  type Doc,
   type DossierDetail,
   type DossierSummary,
   type Field,
@@ -14,6 +15,93 @@ function confidenceClass(c: number) {
   if (c >= 0.9) return 'conf high'
   if (c >= 0.7) return 'conf mid'
   return 'conf low'
+}
+
+// ============ Hồ sơ khách hàng tổng hợp ============
+const PROFILE_SPECS: { name: string; label: string; keys: RegExp; norm: (s: string) => string }[] = [
+  { name: 'customer_name', label: 'Họ và tên', keys: /customer_name|borrower|mortgagor_name|ten_khach/i, norm: (s) => s.toUpperCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/\s+/g, ' ').trim() },
+  { name: 'national_id', label: 'Số CCCD', keys: /national_id|cccd|id_number/i, norm: (s) => s.replace(/\D/g, '') },
+  { name: 'dob', label: 'Ngày sinh', keys: /dob|date_of_birth|ngay_sinh|birth/i, norm: (s) => s.replace(/\D/g, '') },
+  { name: 'address', label: 'Địa chỉ', keys: /address|dia_chi/i, norm: (s) => s.toLowerCase().replace(/\s+/g, ' ').trim() },
+  { name: 'phone', label: 'Điện thoại', keys: /phone|dien_thoai|mobile/i, norm: (s) => s.replace(/\D/g, '') },
+  { name: 'occupation', label: 'Nghề nghiệp', keys: /occupation|nghe_nghiep|job/i, norm: (s) => s.toLowerCase().trim() },
+  { name: 'income', label: 'Thu nhập', keys: /income|thu_nhap|salary/i, norm: (s) => s.replace(/\D/g, '') },
+]
+
+type ProfileEntry = {
+  label: string
+  value: string
+  sources: number
+  consistent: boolean
+  field: Field
+  doc: Doc
+}
+
+function buildProfile(docs: Doc[]): ProfileEntry[] {
+  const out: ProfileEntry[] = []
+  for (const spec of PROFILE_SPECS) {
+    const hits: { field: Field; doc: Doc }[] = []
+    for (const doc of docs) {
+      const f = doc.fields.find((f) => spec.keys.test(f.key) && f.value.trim())
+      if (f) hits.push({ field: f, doc })
+    }
+    if (!hits.length) continue
+    const canon = spec.norm(hits[0].field.value)
+    const consistent = hits.every((h) => spec.norm(h.field.value) === canon)
+    // Ưu tiên bản đã human-review, sau đó confidence cao nhất
+    const best = [...hits].sort(
+      (a, b) =>
+        Number(b.field.human_reviewed) - Number(a.field.human_reviewed) ||
+        b.field.confidence - a.field.confidence,
+    )[0]
+    out.push({
+      label: spec.label,
+      value: best.field.value,
+      sources: hits.length,
+      consistent,
+      field: best.field,
+      doc: best.doc,
+    })
+  }
+  return out
+}
+
+function CustomerProfile({ docs, onPick }: { docs: Doc[]; onPick: (h: Highlight) => void }) {
+  const entries = buildProfile(docs)
+  if (!entries.length) return null
+  return (
+    <div className="profile-card">
+      <div className="profile-head">
+        <span className="profile-avatar" aria-hidden="true">👤</span>
+        <strong>Thông tin chung khách hàng</strong>
+        <span className="profile-note">tổng hợp từ {docs.length} chứng từ — click để soi nguồn</span>
+      </div>
+      <div className="profile-grid">
+        {entries.map((e) => (
+          <button
+            key={e.label}
+            className={`profile-item ${e.consistent ? '' : 'mismatch'}`}
+            onClick={() =>
+              onPick({
+                docId: e.doc.id,
+                mimeType: e.doc.mime_type,
+                page: e.field.page,
+                box: e.field.box_2d,
+                label: e.label,
+              })
+            }
+            title={e.consistent ? `Khớp trên ${e.sources} chứng từ` : 'Giá trị LỆCH giữa các chứng từ!'}
+          >
+            <span className="profile-label">
+              {e.label}
+              {e.sources > 1 && (e.consistent ? ` ✓×${e.sources}` : ' ⚠️ LỆCH')}
+            </span>
+            <span className="profile-value">{e.value}</span>
+          </button>
+        ))}
+      </div>
+    </div>
+  )
 }
 
 function Header() {
@@ -35,6 +123,7 @@ function Header() {
 function DossierList({ onOpen }: { onOpen: (id: string) => void }) {
   const [rows, setRows] = useState<DossierSummary[] | null>(null)
   const [name, setName] = useState('')
+  const [creating, setCreating] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
   const refresh = useCallback(() => {
@@ -43,27 +132,42 @@ function DossierList({ onOpen }: { onOpen: (id: string) => void }) {
   useEffect(refresh, [refresh])
 
   const create = async () => {
-    if (!name.trim()) return
+    if (creating) return
+    // Không bao giờ no-op im lặng: trống tên thì tự đặt theo ngày giờ
+    const finalName =
+      name.trim() ||
+      `Bộ hồ sơ ${new Date().toLocaleString('vi-VN', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}`
+    setCreating(true)
+    setError(null)
     try {
-      const { id } = await api.createDossier(name.trim())
+      const { id } = await api.createDossier(finalName)
       setName('')
       onOpen(id)
     } catch (e) {
       setError(String(e))
+    } finally {
+      setCreating(false)
     }
   }
 
   return (
     <>
-      <div className="new-dossier">
+      <form
+        className="new-dossier"
+        onSubmit={(e) => {
+          e.preventDefault()
+          void create()
+        }}
+      >
         <input
           value={name}
-          placeholder="Tên bộ hồ sơ mới — vd: Hồ sơ vay · Nguyễn Văn An"
+          placeholder="Tên bộ hồ sơ mới — vd: Hồ sơ vay · Nguyễn Văn An (bỏ trống sẽ tự đặt tên)"
           onChange={(e) => setName(e.target.value)}
-          onKeyDown={(e) => e.key === 'Enter' && create()}
         />
-        <button onClick={create}>+ Tạo bộ hồ sơ</button>
-      </div>
+        <button type="submit" disabled={creating}>
+          {creating ? 'Đang tạo…' : '+ Tạo bộ hồ sơ'}
+        </button>
+      </form>
       {error && <div className="banner error">⚠️ {error}</div>}
       {rows === null ? (
         <p className="hint-center">Đang tải…</p>
@@ -181,6 +285,8 @@ function Dossier({ id, onBack }: { id: string; onBack: () => void }) {
         />
         {busy ? '⏳ Đang trích xuất — Gemini đang đọc từng trang…' : '📄 Thả thêm chứng từ vào đây (PDF/ảnh, chọn được nhiều file)'}
       </section>
+
+      <CustomerProfile docs={d.documents} onPick={setHl} />
 
       <div className="detail-cols">
         <div className="docs-col">

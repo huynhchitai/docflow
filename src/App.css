@@ -553,3 +553,92 @@ footer {
     transition: none !important;
   }
 }
+
+/* ---------- Hồ sơ khách hàng tổng hợp ---------- */
+.profile-card {
+  margin-top: 18px;
+  background: linear-gradient(180deg, #fff8f1, var(--navy-800) 55%);
+  border: 1px solid #f4d9bd;
+  border-radius: var(--r) var(--r) var(--r) var(--r-sq);
+  padding: 14px 16px;
+  box-shadow: 0 1px 3px rgba(14, 31, 61, 0.06);
+}
+
+.profile-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.profile-head strong {
+  font-weight: 800;
+}
+
+.profile-avatar {
+  width: 30px;
+  height: 30px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, var(--cam-bright), var(--cam-deep));
+  border-radius: 50% var(--r-sq) 50% 50%;
+  font-size: 0.9rem;
+}
+
+.profile-note {
+  color: var(--muted);
+  font-size: 0.78rem;
+}
+
+.profile-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.profile-item {
+  text-align: left;
+  background: var(--navy-800);
+  border: 1px solid var(--line);
+  border-radius: 10px 10px 10px var(--r-sq);
+  padding: 8px 12px;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  font-family: var(--font);
+  font-weight: 400;
+  transition: border-color 0.15s, background 0.15s;
+}
+
+.profile-item:hover {
+  border-color: var(--cam);
+  background: #fff8f1;
+}
+
+.profile-item .profile-label {
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  color: var(--muted);
+  font-weight: 600;
+}
+
+.profile-item .profile-value {
+  font-family: var(--mono);
+  font-size: 0.86rem;
+  color: var(--text);
+  font-weight: 500;
+  word-break: break-word;
+}
+
+.profile-item.mismatch {
+  border-color: var(--bad);
+  background: var(--bad-bg);
+}
+
+.profile-item.mismatch .profile-label {
+  color: var(--bad);
+}
