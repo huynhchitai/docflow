@@ -808,9 +808,34 @@ function FieldSpecsPage({ onBack }: { onBack: () => void }) {
   )
 }
 
+type View = { page: 'list' } | { page: 'dossier'; id: string } | { page: 'fields' } | { page: 'guide' }
+
+function parseHash(): View {
+  const h = location.hash.replace(/^#\/?/, '')
+  if (h.startsWith('dossier/')) return { page: 'dossier', id: h.slice('dossier/'.length) }
+  if (h === 'guide') return { page: 'guide' }
+  if (h === 'fields') return { page: 'fields' }
+  return { page: 'list' }
+}
+
+function hashOf(v: View): string {
+  if (v.page === 'dossier') return `#/dossier/${v.id}`
+  if (v.page === 'guide') return '#/guide'
+  if (v.page === 'fields') return '#/fields'
+  return '#/'
+}
+
 function App() {
   const [authed, setAuthed] = useState(() => Boolean(localStorage.getItem(ACCESS_KEY)))
-  const [view, setView] = useState<{ page: 'list' } | { page: 'dossier'; id: string } | { page: 'fields' } | { page: 'guide' }>({ page: 'list' })
+  const [view, setViewState] = useState<View>(parseHash)
+  const setView = useCallback((v: View) => {
+    location.hash = hashOf(v) // hashchange listener sẽ cập nhật state
+  }, [])
+  useEffect(() => {
+    const onHash = () => setViewState(parseHash())
+    window.addEventListener('hashchange', onHash)
+    return () => window.removeEventListener('hashchange', onHash)
+  }, [])
   if (!authed && view.page !== 'guide')
     return (
       <main className="shell wide">

@@ -715,8 +715,8 @@ footer {
 .compare-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 14px;
-  padding: 14px 16px;
+  gap: 18px;
+  padding: 16px 18px;
 }
 
 @media (max-width: 900px) {
@@ -727,19 +727,25 @@ footer {
 
 .compare-label {
   display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 10px;
-  margin-bottom: 6px;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 6px;
+  margin-bottom: 8px;
 }
+
+.compare-label .file { font-size: 0.76rem; }
 
 .compare-value {
   font-family: var(--mono);
   font-weight: 600;
+  font-size: 1.02rem;
   color: var(--bad);
   background: var(--bad-bg);
-  padding: 2px 10px;
-  border-radius: 8px 8px 8px var(--r-sq);
+  border: 1px solid #f1b4c4;
+  padding: 6px 14px;
+  border-radius: 10px 10px 10px var(--r-sq);
+  align-self: stretch;
+  text-align: center;
 }
 
 /* ---------- Stats row (KPI) ---------- */
