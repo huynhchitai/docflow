@@ -22,7 +22,7 @@
 - Viết `worker/index.ts`: endpoint `/api/extract` gọi Gemini 2.5 Flash (PDF/ảnh inline base64,
   structured JSON + `box_2d` + warnings, fallback mock khi chưa có key), `/api/health`.
 - Viết UI upload drag-drop + bảng field với confidence badge (`src/App.tsx`, `src/App.css`).
-- Deploy Cloudflare Workers: https://docflow.prismtechemails.workers.dev — smoke test OK.
+- Deploy Cloudflare Workers: https://docflow.huynhchitai.com — smoke test OK.
 - Sinh bộ demo data hư cấu bằng script Python (fpdf2): đơn vay, BCTC, hợp đồng thế chấp
   (cài lỗi CCCD lệch cho demo cross-check), điện SWIFT MT103.
 - Viết ROADMAP.md (kiến trúc đích + phân công 48h).

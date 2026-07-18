@@ -1,7 +1,7 @@
 # DocFlow — Kịch bản pitch 5' + Q&A 2' (Demo Day, livestream)
 
 > Người pitch cầm nhịp theo 7 màn. Số liệu lấy từ `metrics/ACCURACY.md`. Demo live trên
-> https://docflow.prismtechemails.workers.dev (đăng nhập sẵn TRƯỚC khi lên sân khấu, mở sẵn 2 tab:
+> https://docflow.huynhchitai.com (đăng nhập sẵn TRƯỚC khi lên sân khấu, mở sẵn 2 tab:
 > danh sách + bộ "Scan điện thoại · Nguyễn Văn An").
 
 ## Màn 1 — Cú mở (30s)

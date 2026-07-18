@@ -4,7 +4,7 @@
 
 Bài dự thi Vietnam AI Innovation Challenge 2026 · Đề SHB #195 — Intelligent Document Processing · Track Tài chính/Ngân hàng · Team **OCanbubu**
 
-> 🔗 **Demo:** https://docflow.prismtechemails.workers.dev
+> 🔗 **Demo:** https://docflow.huynhchitai.com
 > Mã truy cập: xem trong hồ sơ Checkpoint 2 trên hub BTC (mục credentials).
 >
 > *(English: AI document processing for Vietnamese bank credit dossiers — classify, extract with source-traceable bounding boxes, cross-check across documents, human review with audit trail, export to core banking. Built in 48h, 100% AI-generated code.)*
@@ -76,7 +76,7 @@ Model lỡ đặt tên khác (`cccd`, `so_giay_to`, `borrower`…) vẫn đượ
 ## Hướng dẫn sử dụng (2 phút)
 
 ### Đăng nhập
-Mở [demo](https://docflow.prismtechemails.workers.dev), nhập mã truy cập, bấm **Vào hệ thống**. Mã lưu trên máy bạn — lần sau vào thẳng.
+Mở [demo](https://docflow.huynhchitai.com), nhập mã truy cập, bấm **Vào hệ thống**. Mã lưu trên máy bạn — lần sau vào thẳng.
 
 ### Tạo bộ hồ sơ và nạp chứng từ
 1. Gõ tên (vd: *Hồ sơ vay · Nguyễn Văn An*) rồi bấm **+ Tạo bộ hồ sơ**. Bỏ trống tên cũng được — hệ thống tự đặt theo ngày giờ.

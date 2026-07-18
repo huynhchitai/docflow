@@ -33,7 +33,7 @@
 
 ## Trạng thái hiện tại (Fri ~17:00)
 
-- ✅ Worker + SPA live: https://docflow.prismtechemails.workers.dev (mock mode)
+- ✅ Worker + SPA live: https://docflow.huynhchitai.com (mock mode)
 - ✅ /api/extract viết sẵn đường Gemini thật (thiếu key)
 - ✅ demo-data/: đơn vay, BCTC, hợp đồng (CCCD lệch cài sẵn), MT103
 - ✅ CP1 draft đã lưu trên hub (chưa bấm Nộp)

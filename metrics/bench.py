@@ -1,6 +1,6 @@
 import json, time, unicodedata, urllib.request, statistics, os
 
-BASE = "https://docflow.prismtechemails.workers.dev"
+BASE = "https://docflow.huynhchitai.com"
 CODE = "megalondon-shb-2026"
 DD = "/Users/huynhtai/Developer/docflow/demo-data"
 UA = "Mozilla/5.0 (Macintosh) docflow-bench/1.0"
