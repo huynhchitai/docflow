@@ -1,7 +1,7 @@
 // Đối chiếu chéo các trường giữa các chứng từ trong cùng một bộ hồ sơ.
-// Nhóm trường + quy tắc chuẩn hóa lấy từ shared/fields.ts (một nguồn sự thật).
+// Danh sách trường mặc định từ shared/fields.ts; nhận thêm spec tùy chỉnh từ DB.
 
-import { CANONICAL_FIELDS, normalize } from '../shared/fields'
+import { CANONICAL_FIELDS, normalize, type NormKind } from '../shared/fields'
 
 export type FieldRow = {
   id: string
@@ -17,9 +17,21 @@ export type Alert = {
   severity: 'info' | 'warning' | 'critical'
 }
 
-export function crosscheck(fields: FieldRow[], docLabel: Map<string, string>): Alert[] {
+export type CheckSpec = {
+  key: string
+  label: string
+  aliases: RegExp
+  norm: NormKind
+  crosscheck: boolean
+}
+
+export function crosscheck(
+  fields: FieldRow[],
+  docLabel: Map<string, string>,
+  specs: CheckSpec[] = CANONICAL_FIELDS,
+): Alert[] {
   const alerts: Alert[] = []
-  for (const spec of CANONICAL_FIELDS.filter((f) => f.crosscheck)) {
+  for (const spec of specs.filter((f) => f.crosscheck)) {
     const hits = fields.filter(
       (f) => (f.key === spec.key || spec.aliases.test(f.key)) && f.value.trim(),
     )
@@ -39,6 +51,29 @@ export function crosscheck(fields: FieldRow[], docLabel: Map<string, string>): A
           severity: 'critical',
         })
       }
+    }
+  }
+  return alerts
+}
+
+/** Đối chiếu tên khách KHAI BÁO lúc tạo bộ hồ sơ với tên TRÍCH từ chứng từ */
+export function checkDeclaredName(
+  declared: string,
+  fields: FieldRow[],
+  docLabel: Map<string, string>,
+): Alert[] {
+  const spec = CANONICAL_FIELDS.find((f) => f.key === 'customer_name')!
+  const canonDeclared = normalize('person_name', declared)
+  if (!canonDeclared) return []
+  const alerts: Alert[] = []
+  for (const f of fields) {
+    if (!(f.key === spec.key || spec.aliases.test(f.key)) || !f.value.trim()) continue
+    if (normalize('person_name', f.value) !== canonDeclared) {
+      alerts.push({
+        rule: 'declared_name_mismatch',
+        detail: `Tên trên chứng từ "${f.value}" (${docLabel.get(f.document_id) ?? '?'}) không khớp tên khách khai báo "${declared}"`,
+        severity: 'critical',
+      })
     }
   }
   return alerts

@@ -8,6 +8,8 @@ import {
   type DossierDetail,
   type DossierSummary,
   type Field,
+  type FieldSpec,
+  type Stats,
 } from './api'
 import { DocViewer, type Highlight } from './DocViewer'
 import { CANONICAL_FIELDS, normalize } from '../shared/fields'
@@ -20,13 +22,29 @@ function confidenceClass(c: number) {
 }
 
 // ============ Hồ sơ khách hàng tổng hợp ============
-// Danh sách trường + chuẩn hóa lấy từ shared/fields.ts — cùng nguồn với prompt & cross-check
-const PROFILE_SPECS = CANONICAL_FIELDS.filter((f) => f.profile).map((f) => ({
+// Danh sách trường + chuẩn hóa: built-in từ shared/fields.ts, cộng thêm custom specs từ API
+type ProfileSpec = { name: string; label: string; keys: RegExp; norm: (s: string) => string }
+
+const BUILTIN_PROFILE_SPECS: ProfileSpec[] = CANONICAL_FIELDS.filter((f) => f.profile).map((f) => ({
   name: f.key,
   label: f.label,
   keys: new RegExp(`^${f.key}$|` + f.aliases.source, 'i'),
   norm: (s: string) => normalize(f.norm, s),
 }))
+
+function specsFromApi(list: FieldSpec[]): ProfileSpec[] {
+  return list
+    .filter((f) => f.profile)
+    .map((f) => {
+      let keys: RegExp
+      try {
+        keys = new RegExp(`^${f.key}$|` + (f.aliases ?? f.key), 'i')
+      } catch {
+        keys = new RegExp(`^${f.key}$`, 'i')
+      }
+      return { name: f.key, label: f.label, keys, norm: (s: string) => normalize(f.norm, s) }
+    })
+}
 
 type Hit = { field: Field; doc: Doc }
 
@@ -41,9 +59,9 @@ type ProfileEntry = {
   conflict?: { a: Hit; b: Hit }
 }
 
-function buildProfile(docs: Doc[]): ProfileEntry[] {
+function buildProfile(docs: Doc[], specs: ProfileSpec[]): ProfileEntry[] {
   const out: ProfileEntry[] = []
-  for (const spec of PROFILE_SPECS) {
+  for (const spec of specs) {
     const hits: Hit[] = []
     for (const doc of docs) {
       const f = doc.fields.find((f) => spec.keys.test(f.key) && f.value.trim())
@@ -81,7 +99,11 @@ function CustomerProfile({
   onPick: (h: Highlight) => void
   onCompare: (label: string, a: Hit, b: Hit) => void
 }) {
-  const entries = buildProfile(docs)
+  const [specs, setSpecs] = useState<ProfileSpec[]>(BUILTIN_PROFILE_SPECS)
+  useEffect(() => {
+    api.fieldSpecs().then((list) => setSpecs(specsFromApi(list))).catch(() => {})
+  }, [])
+  const entries = buildProfile(docs, specs)
   if (!entries.length) return null
   return (
     <div className="profile-card">
@@ -135,29 +157,85 @@ function Header() {
   )
 }
 
+// ============ Form tạo / sửa bộ hồ sơ ============
+type DossierFormValues = { name: string; customer_name: string; note: string }
+
+function DossierFormModal({
+  title,
+  initial,
+  saving,
+  onClose,
+  onSave,
+}: {
+  title: string
+  initial: DossierFormValues
+  saving: boolean
+  onClose: () => void
+  onSave: (v: DossierFormValues) => void
+}) {
+  const [v, setV] = useState(initial)
+  const set = (k: keyof DossierFormValues) => (e: React.ChangeEvent<HTMLInputElement>) =>
+    setV({ ...v, [k]: e.target.value })
+  return (
+    <div className="modal" onClick={onClose}>
+      <div className="modal-body form-body" onClick={(e) => e.stopPropagation()}>
+        <div className="viewer-head">{title}</div>
+        <form
+          className="dossier-form"
+          onSubmit={(e) => {
+            e.preventDefault()
+            onSave(v)
+          }}
+        >
+          <label>
+            Tên khách hàng
+            <input value={v.customer_name} onChange={set('customer_name')} placeholder="vd: Nguyễn Văn An" autoFocus />
+            <span className="field-hint">Hệ thống sẽ đối chiếu tên này với tên trích từ chứng từ — lệch là cảnh báo.</span>
+          </label>
+          <label>
+            Tên bộ hồ sơ
+            <input value={v.name} onChange={set('name')} placeholder="Bỏ trống sẽ tự đặt: Hồ sơ vay · [tên khách]" />
+          </label>
+          <label>
+            Ghi chú
+            <input value={v.note} onChange={set('note')} placeholder="vd: vay mua nhà, chi nhánh Đà Nẵng" />
+          </label>
+          <div className="form-actions">
+            <button type="button" className="ghost" onClick={onClose}>Hủy</button>
+            <button type="submit" disabled={saving}>{saving ? 'Đang lưu…' : 'Lưu'}</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  )
+}
+
 // ============ Danh sách bộ hồ sơ ============
-function DossierList({ onOpen }: { onOpen: (id: string) => void }) {
+function DossierList({ onOpen, onFields }: { onOpen: (id: string) => void; onFields: () => void }) {
   const [rows, setRows] = useState<DossierSummary[] | null>(null)
-  const [name, setName] = useState('')
+  const [stats, setStats] = useState<Stats | null>(null)
+  const [showCreate, setShowCreate] = useState(false)
   const [creating, setCreating] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
   const refresh = useCallback(() => {
     api.listDossiers().then(setRows).catch((e) => setError(String(e)))
+    api.stats().then(setStats).catch(() => {})
   }, [])
   useEffect(refresh, [refresh])
 
-  const create = async () => {
+  const create = async (v: DossierFormValues) => {
     if (creating) return
-    // Không bao giờ no-op im lặng: trống tên thì tự đặt theo ngày giờ
-    const finalName =
-      name.trim() ||
-      `Bộ hồ sơ ${new Date().toLocaleString('vi-VN', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}`
+    const name =
+      v.name.trim() ||
+      (v.customer_name.trim()
+        ? `Hồ sơ vay · ${v.customer_name.trim()}`
+        : `Bộ hồ sơ ${new Date().toLocaleString('vi-VN', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}`)
     setCreating(true)
     setError(null)
     try {
-      const { id } = await api.createDossier(finalName)
-      setName('')
+      const { id } = await api.createDossier({ name, customer_name: v.customer_name, note: v.note })
+      setShowCreate(false)
       onOpen(id)
     } catch (e) {
       setError(String(e))
@@ -168,32 +246,34 @@ function DossierList({ onOpen }: { onOpen: (id: string) => void }) {
 
   return (
     <>
-      <form
-        className="new-dossier"
-        onSubmit={(e) => {
-          e.preventDefault()
-          void create()
-        }}
-      >
-        <input
-          value={name}
-          placeholder="Tên bộ hồ sơ mới — vd: Hồ sơ vay · Nguyễn Văn An (bỏ trống sẽ tự đặt tên)"
-          onChange={(e) => setName(e.target.value)}
-        />
-        <button type="submit" disabled={creating}>
-          {creating ? 'Đang tạo…' : '+ Tạo bộ hồ sơ'}
-        </button>
-      </form>
+      {stats && (
+        <div className="stats-row">
+          <div className="stat"><span className="stat-n">{stats.dossiers_total}</span><span className="stat-l">bộ hồ sơ</span></div>
+          <div className="stat"><span className="stat-n">{stats.documents_done}</span><span className="stat-l">chứng từ đã xử lý</span></div>
+          <div className="stat"><span className="stat-n">{stats.fields_total}</span><span className="stat-l">trường trích xuất</span></div>
+          <div className="stat"><span className="stat-n">{stats.fields_auto_pct}%</span><span className="stat-l">tự động, không sửa tay</span></div>
+          <div className="stat"><span className="stat-n">{stats.avg_extract_ms != null ? (stats.avg_extract_ms / 1000).toFixed(1) + 's' : '—'}</span><span className="stat-l">TB / chứng từ</span></div>
+          <div className={`stat ${stats.critical_alerts ? 'stat-bad' : ''}`}><span className="stat-n">{stats.critical_alerts ? '🚨 ' : ''}{stats.critical_alerts}</span><span className="stat-l">cảnh báo nghiêm trọng</span></div>
+        </div>
+      )}
+
+      <div className="list-bar">
+        <button onClick={() => setShowCreate(true)}>+ Tạo bộ hồ sơ</button>
+        <span className="spacer" />
+        <button className="ghost" onClick={onFields}>⚙️ Trường dữ liệu</button>
+      </div>
+
       {error && <div className="banner error">⚠️ {error}</div>}
       {rows === null ? (
         <p className="hint-center">Đang tải…</p>
       ) : rows.length === 0 ? (
-        <p className="hint-center">Chưa có bộ hồ sơ nào — tạo cái đầu tiên đi.</p>
+        <p className="hint-center">Chưa có bộ hồ sơ nào — bấm "+ Tạo bộ hồ sơ" để bắt đầu.</p>
       ) : (
         <div className="dossier-grid">
           {rows.map((d) => (
             <button key={d.id} className="dossier-card" onClick={() => onOpen(d.id)}>
               <strong>{d.name}</strong>
+              {d.customer_name && <div className="card-customer">👤 {d.customer_name}</div>}
               <div className="card-meta">
                 <span className={`chip state-${d.state}`}>{STATE_LABELS[d.state] ?? d.state}</span>
                 <span>{d.documents[0]?.count ?? 0} chứng từ</span>
@@ -204,6 +284,16 @@ function DossierList({ onOpen }: { onOpen: (id: string) => void }) {
             </button>
           ))}
         </div>
+      )}
+
+      {showCreate && (
+        <DossierFormModal
+          title="📁 Tạo bộ hồ sơ mới"
+          initial={{ name: '', customer_name: '', note: '' }}
+          saving={creating}
+          onClose={() => setShowCreate(false)}
+          onSave={create}
+        />
       )}
     </>
   )
@@ -218,6 +308,8 @@ function Dossier({ id, onBack }: { id: string; onBack: () => void }) {
   const [editing, setEditing] = useState<{ id: string; value: string } | null>(null)
   const [exported, setExported] = useState<object | null>(null)
   const [compare, setCompare] = useState<{ label: string; a: Hit; b: Hit } | null>(null)
+  const [showEdit, setShowEdit] = useState(false)
+  const [savingEdit, setSavingEdit] = useState(false)
   const inputRef = useRef<HTMLInputElement>(null)
 
   const refresh = useCallback(() => {
@@ -268,8 +360,16 @@ function Dossier({ id, onBack }: { id: string; onBack: () => void }) {
         <strong>{d.name}</strong>
         <span className={`chip state-${d.state}`}>{STATE_LABELS[d.state] ?? d.state}</span>
         <span className="spacer" />
+        <button className="ghost" onClick={() => setShowEdit(true)}>✎ Sửa</button>
         <button onClick={doExport} disabled={!d.documents.length}>🏦 Export core-banking</button>
       </div>
+
+      {(d.customer_name || d.note) && (
+        <p className="dossier-sub">
+          {d.customer_name && <>👤 <b>{d.customer_name}</b></>}
+          {d.note && <span className="note"> · {d.note}</span>}
+        </p>
+      )}
 
       {error && <div className="banner error">⚠️ {error}</div>}
 
@@ -386,6 +486,27 @@ function Dossier({ id, onBack }: { id: string; onBack: () => void }) {
         </div>
       </div>
 
+      {showEdit && (
+        <DossierFormModal
+          title="✎ Sửa thông tin bộ hồ sơ"
+          initial={{ name: d.name, customer_name: d.customer_name ?? '', note: d.note ?? '' }}
+          saving={savingEdit}
+          onClose={() => setShowEdit(false)}
+          onSave={async (v) => {
+            setSavingEdit(true)
+            try {
+              await api.updateDossier(id, { name: v.name || d.name, customer_name: v.customer_name, note: v.note })
+              setShowEdit(false)
+              refresh()
+            } catch (e) {
+              setError(String(e))
+            } finally {
+              setSavingEdit(false)
+            }
+          }}
+        />
+      )}
+
       {compare && (
         <div className="modal" onClick={() => setCompare(null)}>
           <div className="modal-body compare-body" onClick={(e) => e.stopPropagation()}>
@@ -471,15 +592,105 @@ function AccessGate({ onDone }: { onDone: () => void }) {
   )
 }
 
+// ============ Cấu hình trường dữ liệu ============
+function FieldSpecsPage({ onBack }: { onBack: () => void }) {
+  const [list, setList] = useState<FieldSpec[] | null>(null)
+  const [error, setError] = useState<string | null>(null)
+  const [form, setForm] = useState({ label: '', key: '', aliases: '', norm: 'text_loose' as FieldSpec['norm'], crosscheck: false, profile: true })
+  const [saving, setSaving] = useState(false)
+
+  const refresh = useCallback(() => {
+    api.fieldSpecs().then(setList).catch((e) => setError(String(e)))
+  }, [])
+  useEffect(refresh, [refresh])
+
+  const slugify = (s: string) =>
+    s.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/đ/g, 'd').replace(/[^a-z0-9]+/g, '_').replace(/^_|_$/g, '')
+
+  const add = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!form.label.trim() || saving) return
+    setSaving(true)
+    setError(null)
+    try {
+      await api.addFieldSpec({ ...form, key: form.key.trim() || slugify(form.label) })
+      setForm({ label: '', key: '', aliases: '', norm: 'text_loose', crosscheck: false, profile: true })
+      refresh()
+    } catch (e2) {
+      setError(String(e2))
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  return (
+    <>
+      <div className="detail-bar">
+        <button className="ghost" onClick={onBack}>← Danh sách</button>
+        <strong>⚙️ Trường dữ liệu</strong>
+      </div>
+      <p className="tagline">
+        AI được phép trích thêm trường ngoài danh sách (tự đặt key snake_case) — chúng hiển thị trong bảng chứng từ.
+        Nhưng chỉ trường khai báo ở đây mới được <b>tổng hợp lên thẻ khách hàng</b> và <b>đối chiếu chéo</b>.
+        Thêm trường mới có hiệu lực ngay với chứng từ upload sau đó — không cần deploy.
+      </p>
+      {error && <div className="banner error">⚠️ {error}</div>}
+
+      <form className="spec-form" onSubmit={add}>
+        <input value={form.label} placeholder="Nhãn — vd: Mã số thuế" onChange={(e) => setForm({ ...form, label: e.target.value })} />
+        <input value={form.key} placeholder={`key: ${form.label ? slugify(form.label) : 'tu_dat_hoac_de_trong'}`} onChange={(e) => setForm({ ...form, key: e.target.value })} />
+        <select value={form.norm} onChange={(e) => setForm({ ...form, norm: e.target.value as FieldSpec['norm'] })}>
+          <option value="digits">Chỉ giữ chữ số (CCCD, tiền…)</option>
+          <option value="person_name">Tên người (bỏ dấu, hoa)</option>
+          <option value="text_loose">Chữ tự do</option>
+        </select>
+        <label className="check"><input type="checkbox" checked={form.crosscheck} onChange={(e) => setForm({ ...form, crosscheck: e.target.checked })} /> Đối chiếu chéo</label>
+        <label className="check"><input type="checkbox" checked={form.profile} onChange={(e) => setForm({ ...form, profile: e.target.checked })} /> Lên thẻ khách</label>
+        <button type="submit" disabled={saving}>{saving ? '…' : '+ Thêm'}</button>
+      </form>
+
+      {list === null ? (
+        <p className="hint-center">Đang tải…</p>
+      ) : (
+        <table className="spec-table">
+          <thead>
+            <tr><th>Key</th><th>Nhãn</th><th>Chuẩn hóa</th><th>Đối chiếu</th><th>Thẻ khách</th><th></th></tr>
+          </thead>
+          <tbody>
+            {list.map((f) => (
+              <tr key={f.key} className={f.built_in ? 'builtin' : ''}>
+                <td className="value">{f.key}</td>
+                <td>{f.label}</td>
+                <td className="src">{f.norm}</td>
+                <td>{f.crosscheck ? '✅' : '—'}</td>
+                <td>{f.profile ? '✅' : '—'}</td>
+                <td>
+                  {f.built_in ? (
+                    <span className="src">built-in</span>
+                  ) : (
+                    <button className="ghost small" onClick={() => f.id && api.deleteFieldSpec(f.id).then(refresh)}>Xóa</button>
+                  )}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      )}
+    </>
+  )
+}
+
 function App() {
   const [authed, setAuthed] = useState(() => Boolean(localStorage.getItem(ACCESS_KEY)))
-  const [view, setView] = useState<{ page: 'list' } | { page: 'dossier'; id: string }>({ page: 'list' })
+  const [view, setView] = useState<{ page: 'list' } | { page: 'dossier'; id: string } | { page: 'fields' }>({ page: 'list' })
   if (!authed) return <AccessGate onDone={() => setAuthed(true)} />
   return (
     <main className="shell wide">
       <Header />
       {view.page === 'list' ? (
-        <DossierList onOpen={(id) => setView({ page: 'dossier', id })} />
+        <DossierList onOpen={(id) => setView({ page: 'dossier', id })} onFields={() => setView({ page: 'fields' })} />
+      ) : view.page === 'fields' ? (
+        <FieldSpecsPage onBack={() => setView({ page: 'list' })} />
       ) : (
         <Dossier id={view.id} onBack={() => setView({ page: 'list' })} />
       )}

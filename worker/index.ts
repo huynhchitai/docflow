@@ -1,8 +1,8 @@
 import { Hono } from 'hono'
 import { generateContent, type GeminiEnv } from './gemini'
 import { insert, select, update, storageUpload, storageDownload, type DbEnv } from './db'
-import { crosscheck, type FieldRow } from './crosscheck'
-import { CANONICAL_KEYS_FOR_PROMPT } from '../shared/fields'
+import { crosscheck, checkDeclaredName, type FieldRow, type CheckSpec } from './crosscheck'
+import { CANONICAL_FIELDS } from '../shared/fields'
 
 type Env = GeminiEnv & DbEnv & { ACCESS_CODE?: string }
 
@@ -43,6 +43,46 @@ app.use('/api/*', async (c, next) => {
   return next()
 })
 
+// ---- Trường tùy chỉnh từ DB (bảng field_specs) — merge với từ điển built-in ----
+type CustomSpec = {
+  id: string
+  key: string
+  label: string
+  aliases: string | null
+  norm: 'digits' | 'person_name' | 'text_loose'
+  crosscheck: boolean
+  profile: boolean
+}
+
+let specCache: { t: number; rows: CustomSpec[] } | null = null
+
+async function customSpecs(env: Env): Promise<CustomSpec[]> {
+  if (specCache && Date.now() - specCache.t < 30_000) return specCache.rows
+  try {
+    const rows = await select<CustomSpec>(env, 'field_specs', 'select=*&order=created_at')
+    specCache = { t: Date.now(), rows }
+    return rows
+  } catch {
+    return [] // chưa chạy migration 0003 — dùng built-in
+  }
+}
+
+function toCheckSpec(c: CustomSpec): CheckSpec & { profile: boolean } {
+  let aliases: RegExp
+  try {
+    aliases = new RegExp(c.aliases || `^${c.key}$`, 'i')
+  } catch {
+    aliases = new RegExp(`^${c.key}$`, 'i')
+  }
+  return { key: c.key, label: c.label, aliases, norm: c.norm, crosscheck: c.crosscheck, profile: c.profile }
+}
+
+async function mergedSpecs(env: Env) {
+  const customs = await customSpecs(env)
+  const known = new Set(CANONICAL_FIELDS.map((f) => f.key))
+  return [...CANONICAL_FIELDS, ...customs.filter((c) => !known.has(c.key)).map(toCheckSpec)]
+}
+
 const EXTRACTION_PROMPT = `Bạn là hệ thống IDP (Intelligent Document Processing) cho ngân hàng Việt Nam.
 Phân tích tài liệu đính kèm và trả về JSON đúng schema sau, không thêm chữ nào khác:
 {
@@ -50,7 +90,7 @@ Phân tích tài liệu đính kèm và trả về JSON đúng schema sau, khôn
   "doc_type_confidence": 0.0-1.0,
   "fields": [
     {
-      "key": "snake_case. BẮT BUỘC dùng đúng key chuẩn khi thông tin tương ứng xuất hiện: ${CANONICAL_KEYS_FOR_PROMPT}. Thông tin ngoài danh sách thì tự đặt snake_case.",
+      "key": "snake_case. BẮT BUỘC dùng đúng key chuẩn khi thông tin tương ứng xuất hiện: __CANON_KEYS__. Thông tin ngoài danh sách thì tự đặt snake_case.",
       "label": "nhãn tiếng Việt",
       "value": "giá trị trích xuất, giữ nguyên định dạng gốc",
       "confidence": 0.0-1.0,
@@ -77,6 +117,8 @@ async function fileToB64(file: File): Promise<string> {
 }
 
 async function extractFile(env: Env, file: File): Promise<ExtractResult> {
+  const keysList = (await mergedSpecs(env)).map((f) => `${f.key} (${f.label})`).join(', ')
+  const prompt = EXTRACTION_PROMPT.replace('__CANON_KEYS__', keysList)
   const hasCreds = Boolean(
     (env.GEMINI_PROXY_URL && env.GEMINI_PROXY_KEY) || env.GCP_SERVICE_ACCOUNT_KEY || env.GEMINI_API_KEY,
   )
@@ -101,7 +143,7 @@ async function extractFile(env: Env, file: File): Promise<ExtractResult> {
       model: 'gemini-3-flash-preview',
       mimeType: file.type || 'application/pdf',
       dataB64,
-      prompt: EXTRACTION_PROMPT,
+      prompt,
     })
     try {
       parsed = JSON.parse(text) as Partial<ExtractResult>
@@ -135,10 +177,34 @@ app.post('/api/extract', async (c) => {
 
 // ---- Vòng đời bộ hồ sơ ----
 app.post('/api/dossiers', async (c) => {
-  const { name } = await c.req.json<{ name?: string }>()
-  if (!name?.trim()) return c.json({ error: 'Thiếu tên bộ hồ sơ' }, 400)
-  const [dossier] = await insert<{ id: string }>(c.env, 'dossiers', { name: name.trim() })
-  return c.json(dossier, 201)
+  const body = await c.req.json<{ name?: string; customer_name?: string; note?: string }>()
+  if (!body.name?.trim()) return c.json({ error: 'Thiếu tên bộ hồ sơ' }, 400)
+  const full = {
+    name: body.name.trim(),
+    customer_name: body.customer_name?.trim() || null,
+    note: body.note?.trim() || null,
+  }
+  try {
+    const [dossier] = await insert<{ id: string }>(c.env, 'dossiers', full)
+    return c.json(dossier, 201)
+  } catch {
+    // DB chưa có cột mới (migration 0003) — vẫn tạo được với tên
+    const [dossier] = await insert<{ id: string }>(c.env, 'dossiers', { name: full.name })
+    return c.json(dossier, 201)
+  }
+})
+
+// Sửa thông tin bộ hồ sơ
+app.patch('/api/dossiers/:id', async (c) => {
+  const body = await c.req.json<{ name?: string; customer_name?: string; note?: string }>()
+  const patch: Record<string, string | null> = {}
+  if (body.name !== undefined) patch.name = body.name.trim() || null
+  if (body.customer_name !== undefined) patch.customer_name = body.customer_name.trim() || null
+  if (body.note !== undefined) patch.note = body.note.trim() || null
+  if (!Object.keys(patch).length) return c.json({ error: 'Không có gì để sửa' }, 400)
+  if (patch.name === null) return c.json({ error: 'Tên không được trống' }, 400)
+  const [row] = await update(c.env, 'dossiers', `id=eq.${c.req.param('id')}`, patch)
+  return c.json(row ?? { ok: true })
 })
 
 app.get('/api/dossiers', async (c) => {
@@ -231,7 +297,17 @@ app.post('/api/dossiers/:id/files', async (c) => {
     ? await select<FieldRow>(c.env, 'fields', `select=id,document_id,key,label,value&document_id=in.(${docIds})`)
     : []
   const labelMap = new Map(docs.map((d) => [d.id, d.filename]))
-  const alerts = crosscheck(fields, labelMap)
+  const specs = await mergedSpecs(c.env)
+  const alerts = crosscheck(fields, labelMap, specs)
+  // Đối chiếu tên khách khai báo lúc tạo bộ với tên trích từ chứng từ
+  try {
+    const [dossierRow] = await select<{ customer_name: string | null }>(
+      c.env, 'dossiers', `select=customer_name&id=eq.${dossierId}`,
+    )
+    if (dossierRow?.customer_name) {
+      alerts.push(...checkDeclaredName(dossierRow.customer_name, fields, labelMap))
+    }
+  } catch { /* chưa migration 0003 */ }
   await fetch(`${c.env.SUPABASE_URL}/rest/v1/crosscheck_alerts?dossier_id=eq.${dossierId}`, {
     method: 'DELETE',
     headers: { apikey: c.env.SUPABASE_SECRET_KEY!, Authorization: `Bearer ${c.env.SUPABASE_SECRET_KEY}` },
@@ -314,6 +390,63 @@ app.post('/api/dossiers/:id/export', async (c) => {
   }
   await update(c.env, 'dossiers', `id=eq.${id}`, { state: 'exported' })
   return c.json(payload)
+})
+
+// ---- Cấu hình trường dữ liệu ----
+app.get('/api/field-specs', async (c) => {
+  const customs = await customSpecs(c.env)
+  return c.json([
+    ...CANONICAL_FIELDS.map((f) => ({
+      key: f.key, label: f.label, aliases: f.aliases.source, norm: f.norm,
+      crosscheck: f.crosscheck, profile: f.profile, built_in: true,
+    })),
+    ...customs.map((s) => ({ ...s, built_in: false })),
+  ])
+})
+
+app.post('/api/field-specs', async (c) => {
+  const b = await c.req.json<Partial<CustomSpec>>()
+  const key = (b.key ?? '').trim().toLowerCase().replace(/[^a-z0-9_]/g, '_')
+  if (!key || !b.label?.trim()) return c.json({ error: 'Cần key và nhãn' }, 400)
+  if (CANONICAL_FIELDS.some((f) => f.key === key)) return c.json({ error: `"${key}" là trường built-in` }, 400)
+  const [row] = await insert(c.env, 'field_specs', {
+    key, label: b.label.trim(), aliases: b.aliases?.trim() || null,
+    norm: b.norm ?? 'text_loose',
+    crosscheck: Boolean(b.crosscheck), profile: b.profile !== false,
+  })
+  specCache = null
+  return c.json(row, 201)
+})
+
+app.delete('/api/field-specs/:id', async (c) => {
+  await fetch(`${c.env.SUPABASE_URL}/rest/v1/field_specs?id=eq.${c.req.param('id')}`, {
+    method: 'DELETE',
+    headers: { apikey: c.env.SUPABASE_SECRET_KEY!, Authorization: `Bearer ${c.env.SUPABASE_SECRET_KEY}` },
+  })
+  specCache = null
+  return c.json({ ok: true })
+})
+
+// ---- Số liệu dashboard ----
+app.get('/api/stats', async (c) => {
+  const [dossiers, documents, fields, alerts] = await Promise.all([
+    select<{ state: string }>(c.env, 'dossiers', 'select=state'),
+    select<{ state: string; extract_ms: number | null }>(c.env, 'documents', 'select=state,extract_ms'),
+    select<{ human_reviewed: boolean }>(c.env, 'fields', 'select=human_reviewed'),
+    select<{ severity: string }>(c.env, 'crosscheck_alerts', 'select=severity'),
+  ])
+  const ms = documents.map((d) => d.extract_ms).filter((v): v is number => v != null)
+  return c.json({
+    dossiers_total: dossiers.length,
+    dossiers_needs_review: dossiers.filter((d) => d.state === 'needs_review').length,
+    documents_done: documents.filter((d) => d.state === 'extracted').length,
+    fields_total: fields.length,
+    fields_auto_pct: fields.length
+      ? Math.round((100 * fields.filter((f) => !f.human_reviewed).length) / fields.length)
+      : 100,
+    avg_extract_ms: ms.length ? Math.round(ms.reduce((a, b) => a + b, 0) / ms.length) : null,
+    critical_alerts: alerts.filter((a) => a.severity === 'critical').length,
+  })
 })
 
 app.onError((err, c) => c.json({ error: 'Internal error', detail: err.message }, 500))

@@ -33,6 +33,8 @@ export type Alert = {
 export type DossierSummary = {
   id: string
   name: string
+  customer_name?: string | null
+  note?: string | null
   state: string
   created_at: string
   documents: { count: number }[]
@@ -42,6 +44,8 @@ export type DossierSummary = {
 export type DossierDetail = {
   id: string
   name: string
+  customer_name?: string | null
+  note?: string | null
   state: string
   documents: Doc[]
   crosscheck_alerts: Alert[]
@@ -85,12 +89,30 @@ async function j<T>(resp: Response): Promise<T> {
 export const api = {
   listDossiers: () => fetch('/api/dossiers', { headers: accessHeaders() }).then((r) => j<DossierSummary[]>(r)),
   getDossier: (id: string) => fetch(`/api/dossiers/${id}`, { headers: accessHeaders() }).then((r) => j<DossierDetail>(r)),
-  createDossier: (name: string) =>
+  createDossier: (payload: { name: string; customer_name?: string; note?: string }) =>
     fetch('/api/dossiers', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', ...accessHeaders() },
-      body: JSON.stringify({ name }),
+      body: JSON.stringify(payload),
     }).then((r) => j<{ id: string }>(r)),
+  updateDossier: (id: string, patch: { name?: string; customer_name?: string; note?: string }) =>
+    fetch(`/api/dossiers/${id}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json', ...accessHeaders() },
+      body: JSON.stringify(patch),
+    }).then((r) => j<object>(r)),
+  stats: () => fetch('/api/stats', { headers: accessHeaders() }).then((r) => j<Stats>(r)),
+  fieldSpecs: () => fetch('/api/field-specs', { headers: accessHeaders() }).then((r) => j<FieldSpec[]>(r)),
+  addFieldSpec: (spec: Partial<FieldSpec>) =>
+    fetch('/api/field-specs', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', ...accessHeaders() },
+      body: JSON.stringify(spec),
+    }).then((r) => j<FieldSpec>(r)),
+  deleteFieldSpec: (id: string) =>
+    fetch(`/api/field-specs/${id}`, { method: 'DELETE', headers: accessHeaders() }).then((r) =>
+      j<object>(r),
+    ),
   uploadFiles: (id: string, files: File[]) => {
     const form = new FormData()
     for (const f of files) form.append('files', f)
@@ -107,4 +129,25 @@ export const api = {
   exportDossier: (id: string) =>
     fetch(`/api/dossiers/${id}/export`, { method: 'POST', headers: accessHeaders() }).then((r) => j<object>(r)),
   fileUrl: (docId: string) => `/api/documents/${docId}/file`,
+}
+
+export type Stats = {
+  dossiers_total: number
+  dossiers_needs_review: number
+  documents_done: number
+  fields_total: number
+  fields_auto_pct: number
+  avg_extract_ms: number | null
+  critical_alerts: number
+}
+
+export type FieldSpec = {
+  id?: string
+  key: string
+  label: string
+  aliases: string | null
+  norm: 'digits' | 'person_name' | 'text_loose'
+  crosscheck: boolean
+  profile: boolean
+  built_in: boolean
 }
