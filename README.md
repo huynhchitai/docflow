@@ -21,7 +21,7 @@ Cán bộ tín dụng nhận một bộ hồ sơ vay gồm nhiều chứng từ 
 4. **Tự đối chiếu chéo giữa các chứng từ** — CCCD/số tiền/kỳ hạn lệch nhau là báo đỏ CRITICAL; click ô lệch mở **hai bản gốc cạnh nhau** để đối chất; tên khách khai báo lúc tạo bộ cũng được đối chiếu với tên trên giấy
 5. **Người duyệt sửa tại chỗ** — double-click giá trị để sửa, mọi thay đổi ghi vào audit log; trường tin cậy thấp tự đánh vàng/đỏ
 6. **Xuất dữ liệu core banking** — payload nói đúng ngôn ngữ hệ thống SHB: khối **CIF** (Customer Information File), cash-flow, metadata tích hợp nhắm core **Intellect (SOA/ESB)** qua adapter — không đụng core
-7. **Nghiệp vụ tự cấu hình trường mới** ngay trên UI (⚙️ Trường dữ liệu) — thêm "Mã số thuế" trong 10 giây, có hiệu lực tức thì với prompt AI, không cần deploy
+7. **Nghiệp vụ tự cấu hình trường mới** ngay trên UI (mục Trường dữ liệu) — thêm "Mã số thuế" trong 10 giây, có hiệu lực tức thì với prompt AI, không cần deploy
 
 Nguyên tắc thiết kế: **không suy diễn**. Trường nào AI không đọc được thì bỏ trống + cảnh báo, không đoán. Trường nào tin cậy thấp thì đánh vàng/đỏ chờ người duyệt.
 
@@ -43,18 +43,18 @@ Triết lý phân vai: **AI đọc — code đối chiếu — người quyết 
 
 ```mermaid
 flowchart LR
-    U[📄 Upload<br/>PDF/scan] --> S[(Supabase<br/>Storage)]
+    U[Upload<br/>PDF/scan] --> S[(Supabase<br/>Storage)]
     U --> CL[Phân loại chứng từ<br/>PyTorch router]
     CL --> EX[Trích xuất<br/>Gemini · Vertex AI<br/>value + confidence + box_2d]
     EX -->|tin cậy thấp /<br/>viết tay / mộc đè| ES[Escalate<br/>Gemini Pro]
     ES --> EX
     EX --> P[(Postgres<br/>fields + bbox + audit)]
     P --> CC{Cross-check<br/>rule thuần TS<br/>theo từ điển trường chuẩn}
-    CC -->|khớp| OK[✅ Hoàn tất]
-    CC -->|lệch| AL[🚨 Cảnh báo CRITICAL<br/>+ so sánh 2 bản gốc]
-    AL --> HR[👩‍💼 Human review<br/>sửa tại chỗ + audit log]
+    CC -->|khớp| OK[Hoàn tất]
+    CC -->|lệch| AL[Cảnh báo trọng yếu<br/>+ so sánh 2 bản gốc]
+    AL --> HR[Người phê duyệt<br/>hiệu chỉnh + nhật ký kiểm toán]
     HR --> OK
-    OK --> XP[🏦 Export<br/>core-banking JSON]
+    OK --> XP[Xuất dữ liệu<br/>core-banking JSON]
 ```
 
 ## Quy ước trường chuẩn (canonical fields)
@@ -63,12 +63,12 @@ flowchart LR
 
 | Key chuẩn                                                             | Nghĩa              | Chuẩn hóa khi so sánh                 | Đối chiếu chéo           |
 | ---------------------------------------------------------------------- | ------------------- | ---------------------------------------- | ---------------------------- |
-| `customer_name`                                                      | Họ và tên        | UPPERCASE, bỏ dấu, gộp khoảng trắng | ✅                           |
-| `national_id`                                                        | Số CCCD            | chỉ giữ chữ số                       | ✅                           |
-| `date_of_birth`                                                      | Ngày sinh          | chỉ giữ chữ số                       | ✅                           |
-| `loan_amount`                                                        | Số tiền vay       | chỉ giữ chữ số                       | ✅                           |
-| `loan_term`                                                          | Kỳ hạn            | chỉ giữ chữ số                       | ✅                           |
-| `interest_rate`                                                      | Lãi suất          | chỉ giữ chữ số                       | ✅                           |
+| `customer_name`                                                      | Họ và tên        | UPPERCASE, bỏ dấu, gộp khoảng trắng | ✓                           |
+| `national_id`                                                        | Số CCCD            | chỉ giữ chữ số                       | ✓                           |
+| `date_of_birth`                                                      | Ngày sinh          | chỉ giữ chữ số                       | ✓                           |
+| `loan_amount`                                                        | Số tiền vay       | chỉ giữ chữ số                       | ✓                           |
+| `loan_term`                                                          | Kỳ hạn            | chỉ giữ chữ số                       | ✓                           |
+| `interest_rate`                                                      | Lãi suất          | chỉ giữ chữ số                       | ✓                           |
 | `address` / `phone` / `occupation` / `income` / `collateral` | Thông tin bổ trợ | lowercase / chữ số                     | — (chỉ tổng hợp profile) |
 
 Model lỡ đặt tên khác (`cccd`, `so_giay_to`, `borrower`…) vẫn được map về key chuẩn qua bảng alias trong cùng file. Vì sao đối chiếu bằng code thuần thay vì hỏi AI: trọng tài phải deterministic và giải thích được từng cảnh báo — bộ phận phát hiện sai lệch mà cũng dùng model thì tự nó có thể sai lệch.
@@ -87,25 +87,25 @@ Mở [demo](https://docflow.huynhchitai.com), nhập mã truy cập, bấm **Và
 
 ### Đọc kết quả
 
-- **Thẻ "👤 Thông tin chung khách hàng"** trên cùng: hồ sơ khách tổng hợp từ mọi chứng từ. `✓×2` nghĩa là giá trị khớp trên 2 chứng từ; ô viền đỏ **⚠️ LỆCH** nghĩa là các chứng từ mâu thuẫn nhau.
-- **Banner đỏ CRITICAL**: cảnh báo đối chiếu chéo (vd: *Số CCCD không khớp giữa hợp đồng và đơn vay*).
+- **Thẻ "Thông tin chung khách hàng"** trên cùng: hồ sơ khách tổng hợp từ mọi chứng từ. nhãn "2 nguồn" nghĩa là giá trị trùng khớp trên 2 chứng từ; ô viền đỏ **SAI LỆCH** nghĩa là các chứng từ mâu thuẫn nhau.
+- **Cảnh báo trọng yếu** (banner đỏ): kết quả đối chiếu chéo (vd: *Số CCCD không khớp giữa hợp đồng và đơn vay*).
 - **Bảng trường theo từng chứng từ**: giá trị + % tin cậy (xanh ≥90, vàng ≥70, đỏ <70) + trang nguồn.
 
-### Soi nguồn — tính năng đáng thử nhất
+### Truy vết nguồn dữ liệu
 
-Click bất kỳ trường nào (trong thẻ khách hàng hoặc bảng). Bản scan gốc mở ở cột phải, **khoanh cam đúng vị trí con số đó**, phần còn lại mờ đi. Giá trị nằm vắt nhiều dòng thì khoanh từng dòng.
+Chọn bất kỳ trường nào trong thẻ khách hàng hoặc bảng trường. Bản scan gốc mở ở cột phải và **đánh dấu đúng vị trí giá trị đó**, phần còn lại được làm mờ. Giá trị nằm vắt nhiều dòng thì khoanh từng dòng.
 
-### Đối chiếu khi chứng từ mâu thuẫn
+### Đối chiếu và phân xử khi chứng từ mâu thuẫn
 
-Ô nào trong thẻ khách hàng viền đỏ **⚠️ LỆCH** — click vào là hai bản scan gốc mở **cạnh nhau**, mỗi bên khoanh cam đúng chỗ giá trị mâu thuẫn. Đây là màn đối chất trực quan cho cán bộ kiểm soát rủi ro.
+Chọn ô **SAI LỆCH** trong thẻ khách hàng — hai bản scan gốc mở **cạnh nhau**, mỗi bên đánh dấu đúng vị trí giá trị mâu thuẫn. Dưới mỗi bản có nút **"Dùng giá trị này làm chuẩn"**: giá trị được chọn áp cho bản còn lại qua luồng hiệu chỉnh có ghi nhật ký, cảnh báo được tính lại ngay.
 
 ### Tự thêm trường dữ liệu (không cần dev)
 
 Chọn **Trường dữ liệu** → điền nhãn (key tự sinh), chọn kiểu chuẩn hóa, tick "Đối chiếu chéo"/"Lên thẻ khách" → **+ Thêm**. Trường mới có hiệu lực ngay với chứng từ upload sau đó — prompt AI tự cập nhật. Trường built-in bị khóa để bảo vệ quy ước chung.
 
-### Duyệt và xuất
+### Hiệu chỉnh và chuyển core banking
 
-- Sửa giá trị sai: **double-click** vào giá trị → gõ lại → Enter. Trường đã sửa hiện ✏️ và được ưu tiên khi tổng hợp. Mọi lần sửa ghi vào audit log (ai, lúc nào, giá trị cũ → mới).
+- Hiệu chỉnh giá trị: **nhấp đúp** vào giá trị, nhập lại và xác nhận. Trường đã hiệu chỉnh được đánh dấu biểu tượng bút và ưu tiên khi tổng hợp. Mọi thay đổi ghi vào **nhật ký kiểm toán** (người sửa, thời điểm, giá trị cũ và mới).
 - Chọn **Xuất dữ liệu core banking** để nhận payload JSON (`shb.core-banking.loan-intake.v1`) gồm thông tin khách hàng, khoản vay, danh mục chứng từ và trạng thái review.
 
 ## Kiến trúc
