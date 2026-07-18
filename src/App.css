@@ -111,22 +111,49 @@ header h1 span {
   max-width: 62ch;
 }
 
-/* ---------- Nút ---------- */
+/* ---------- Nút — component theo shbfinance.com.vn (buttonfx slideleft) ----------
+   Nền cam đặc, chữ trắng, viền cam 1px, bo 6px; hover: lớp kem trượt vào
+   từ trái, chữ chuyển cam. Hai lớp ::before (cam) / ::after (kem trượt). */
 button {
-  background: var(--cam);
-  color: #4a2504;
-  border: 0;
-  border-radius: var(--r) var(--r) var(--r) var(--r-sq);
+  position: relative;
+  z-index: 0;
+  overflow: hidden;
+  background: transparent;
+  color: #fff;
+  border: 1px solid var(--cam-deep);
+  border-radius: 6px;
   padding: 11px 18px;
-  font-weight: 800;
+  font-weight: 700;
   font-family: var(--font);
   cursor: pointer;
   font-size: 0.88rem;
-  transition: background 0.15s, transform 0.1s;
+  transition: color 0.25s, transform 0.1s;
+}
+
+button::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -2;
+  background: var(--cam);
+}
+
+button::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background: #fff7e6;
+  transform: translate3d(-101%, 0, 0);
+  transition: transform 0.35s ease;
 }
 
 button:hover {
-  background: var(--cam-bright);
+  color: var(--cam-text);
+}
+
+button:hover::after {
+  transform: translateZ(0);
 }
 
 button:active {
@@ -134,8 +161,39 @@ button:active {
 }
 
 button:disabled {
-  opacity: 0.45;
   cursor: default;
+  color: #fff;
+  border-color: #ffb46a;
+}
+
+button:disabled::before {
+  background: #ffb46a;
+}
+
+button:disabled::after {
+  display: none;
+}
+
+/* Các biến thể tự quản màu nền — tắt hai lớp hiệu ứng */
+button.ghost::before, button.ghost::after,
+button.danger::before, button.danger::after,
+.resolve-btn::before, .resolve-btn::after,
+.modal-x::before, .modal-x::after,
+.dossier-card::before, .dossier-card::after,
+.profile-item::before, .profile-item::after,
+.minidemo-field::before, .minidemo-field::after,
+.setup-code button::before, .setup-code button::after {
+  content: none;
+}
+
+/* Button-card (bộ hồ sơ, ô profile, demo): chữ mực navy, hover không đổi màu chữ */
+.dossier-card, .profile-item, .minidemo-field,
+.dossier-card:hover, .profile-item:hover, .minidemo-field:hover {
+  color: var(--text);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  button::after { transition: none; }
 }
 
 button.ghost {
@@ -149,6 +207,12 @@ button.ghost:hover {
   color: var(--text);
   border-color: var(--cam);
   background: transparent;
+}
+
+button.ghost:disabled {
+  color: var(--muted);
+  border-color: var(--line);
+  opacity: 0.55;
 }
 
 button:focus-visible,
@@ -1031,7 +1095,8 @@ button.danger:hover { border-color: var(--bad); color: var(--bad); }
   border: 1px solid #9adfba;
   font-weight: 700;
 }
-.resolve-btn:hover { background: #d9f3e4; }
+.resolve-btn:hover { background: #d9f3e4; color: var(--ok); }
+.resolve-btn:disabled { color: var(--ok); border-color: #9adfba; opacity: 0.6; }
 
 
 /* ============ Quét cân bằng layout toàn cục ============ */
@@ -1121,6 +1186,49 @@ button.danger:hover { border-color: var(--bad); color: var(--bad); }
 .modal-x:hover { background: rgba(255, 255, 255, 0.12); color: #fff; }
 
 .compare-grid { padding: 14px 16px 0; gap: 14px; }
+
+/* Hàng nhập tay khi cả hai bản đều sai */
+.compare-manual {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 16px 14px;
+}
+.compare-manual .manual-q {
+  color: var(--muted);
+  font-size: 0.82rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+.compare-manual input {
+  flex: 1;
+  min-width: 0;
+  padding: 9px 12px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: var(--navy-800);
+  color: var(--text);
+  font-size: 0.86rem;
+  font-family: var(--font);
+}
+.compare-manual button { white-space: nowrap; }
+
+/* Modal nhập tay từ thẻ thông tin chung */
+.manual-body { max-width: 460px; }
+.manual-form { padding: 14px 16px 16px; display: flex; flex-direction: column; gap: 12px; }
+.manual-hint { margin: 0; color: var(--muted); font-size: 0.84rem; line-height: 1.5; }
+.manual-form input {
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: var(--navy-800);
+  color: var(--text);
+  font-size: 0.95rem;
+  font-family: var(--mono);
+}
+.manual-form input:focus,
+.compare-manual input:focus { outline: 2px solid var(--cam-bright); outline-offset: 1px; border-color: var(--cam); }
+.manual-form .modal-actions { display: flex; justify-content: flex-end; gap: 8px; }
 
 .compare-pane {
   background: var(--navy-900);

@@ -62,6 +62,8 @@ type ProfileEntry = {
   doc: Doc
   // khi lệch: cặp bằng chứng đầu tiên mâu thuẫn nhau để so sánh cạnh nhau
   conflict?: { a: Hit; b: Hit }
+  // mọi nguồn chứa trường này — dùng khi nhập tay giá trị chuẩn cho cả bộ
+  hits: Hit[]
 }
 
 function buildProfile(docs: Doc[], specs: ProfileSpec[]): ProfileEntry[] {
@@ -90,6 +92,7 @@ function buildProfile(docs: Doc[], specs: ProfileSpec[]): ProfileEntry[] {
       field: best.field,
       doc: best.doc,
       conflict: differing ? { a: hits[0], b: differing } : undefined,
+      hits,
     })
   }
   return out
@@ -99,10 +102,12 @@ function CustomerProfile({
   docs,
   onPick,
   onCompare,
+  onManual,
 }: {
   docs: Doc[]
   onPick: (h: Highlight) => void
   onCompare: (label: string, a: Hit, b: Hit) => void
+  onManual: (label: string, hits: Hit[], current: string) => void
 }) {
   const [specs, setSpecs] = useState<ProfileSpec[]>(BUILTIN_PROFILE_SPECS)
   useEffect(() => {
@@ -115,7 +120,7 @@ function CustomerProfile({
       <div className="profile-head">
         <span className="profile-avatar" aria-hidden="true"><UserIcon size={16} /></span>
         <strong>Thông tin chung khách hàng</strong>
-        <span className="profile-note">tổng hợp từ {docs.length} chứng từ — chọn một trường để xem nguồn trích xuất</span>
+        <span className="profile-note">tổng hợp từ {docs.length} chứng từ — chọn để xem nguồn · nhấp đúp để nhập tay giá trị chuẩn</span>
       </div>
       <div className="profile-grid">
         {entries.map((e) => (
@@ -133,7 +138,8 @@ function CustomerProfile({
                     label: e.label,
                   })
             }
-            title={e.consistent ? `Trùng khớp trên ${e.sources} chứng từ` : 'Sai lệch giữa các chứng từ — chọn để đối chiếu hai bản gốc'}
+            onDoubleClick={() => onManual(e.label, e.hits, e.value)}
+            title={e.consistent ? `Trùng khớp trên ${e.sources} chứng từ — nhấp đúp để nhập tay` : 'Sai lệch giữa các chứng từ — chọn để đối chiếu hai bản gốc, nhấp đúp để nhập tay'}
           >
             <span className="profile-label">
               {e.label}
@@ -316,6 +322,8 @@ function Dossier({ id, onBack }: { id: string; onBack: () => void }) {
   const [copied, setCopied] = useState(false)
   const [compare, setCompare] = useState<{ label: string; a: Hit; b: Hit } | null>(null)
   const [resolving, setResolving] = useState(false)
+  const [manual, setManual] = useState<{ label: string; hits: Hit[]; value: string } | null>(null)
+  const [manualVal, setManualVal] = useState('')
   const [showEdit, setShowEdit] = useState(false)
   const [savingEdit, setSavingEdit] = useState(false)
   const [prog, setProg] = useState<{ total: number; done: number } | null>(null)
@@ -366,6 +374,39 @@ function Dossier({ id, onBack }: { id: string; onBack: () => void }) {
       refresh()
     } catch (e) {
       setError(String(e))
+    }
+  }
+
+  // Nhập tay giá trị chuẩn khi mọi bản trích xuất đều sai — áp cho toàn bộ nguồn, có audit
+  const saveManual = async () => {
+    if (!manual || !manual.value.trim()) return
+    setResolving(true)
+    try {
+      await Promise.all(manual.hits.map((h) => api.editField(h.field.id, manual.value.trim())))
+      await api.recheckDossier(id)
+      setManual(null)
+      refresh()
+    } catch (e) {
+      setError(String(e))
+    } finally {
+      setResolving(false)
+    }
+  }
+
+  const applyCompareManual = async () => {
+    if (!compare || !manualVal.trim()) return
+    setResolving(true)
+    try {
+      await Promise.all(
+        [compare.a, compare.b].map((h) => api.editField(h.field.id, manualVal.trim())),
+      )
+      await api.recheckDossier(id)
+      setCompare(null)
+      refresh()
+    } catch (e) {
+      setError(String(e))
+    } finally {
+      setResolving(false)
     }
   }
 
@@ -457,7 +498,12 @@ function Dossier({ id, onBack }: { id: string; onBack: () => void }) {
         )}
       </section>
 
-      <CustomerProfile docs={d.documents} onPick={setHl} onCompare={(label, x, y) => setCompare({ label, a: x, b: y })} />
+      <CustomerProfile
+        docs={d.documents}
+        onPick={setHl}
+        onCompare={(label, x, y) => { setCompare({ label, a: x, b: y }); setManualVal('') }}
+        onManual={(label, hits, current) => { setCompare(null); setManual({ label, hits, value: current }) }}
+      />
 
       <div className="detail-cols">
         <div className="docs-col">
@@ -629,6 +675,51 @@ function Dossier({ id, onBack }: { id: string; onBack: () => void }) {
                   </div>
                 )
               })}
+            </div>
+            <div className="compare-manual">
+              <span className="manual-q">Cả hai đều sai?</span>
+              <input
+                value={manualVal}
+                placeholder="Nhập giá trị đúng theo bản gốc…"
+                onChange={(e) => setManualVal(e.target.value)}
+                onKeyDown={(e) => e.key === 'Enter' && applyCompareManual()}
+              />
+              <button disabled={!manualVal.trim() || resolving} onClick={applyCompareManual}>
+                {resolving ? 'Đang áp…' : 'Áp cho cả hai'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {manual && (
+        <div className="modal" onClick={() => setManual(null)}>
+          <div className="modal-body manual-body" onClick={(e) => e.stopPropagation()}>
+            <div className="viewer-head compare-head">
+              <span className="compare-title">
+                <Pencil size={14} /> Nhập tay giá trị chuẩn — {manual.label}
+              </span>
+              <button className="modal-x" onClick={() => setManual(null)} aria-label="Đóng">
+                <X size={16} />
+              </button>
+            </div>
+            <div className="manual-form">
+              <p className="manual-hint">
+                Dùng khi giá trị trích xuất trên mọi chứng từ đều sai so với bản gốc. Giá trị nhập
+                sẽ áp cho {manual.hits.length} chứng từ nguồn qua luồng hiệu chỉnh có nhật ký kiểm toán.
+              </p>
+              <input
+                autoFocus
+                value={manual.value}
+                onChange={(e) => setManual({ ...manual, value: e.target.value })}
+                onKeyDown={(e) => e.key === 'Enter' && saveManual()}
+              />
+              <div className="modal-actions">
+                <button className="ghost" onClick={() => setManual(null)}>Hủy</button>
+                <button disabled={!manual.value.trim() || resolving} onClick={saveManual}>
+                  {resolving ? 'Đang áp…' : <><Check size={15} /> Áp cho tất cả nguồn</>}
+                </button>
+              </div>
             </div>
           </div>
         </div>
