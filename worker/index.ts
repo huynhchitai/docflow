@@ -24,6 +24,7 @@ type ExtractResult = {
   size_bytes: number
   fields: ExtractedField[]
   warnings: string[]
+  classifier?: { doc_type: string; confidence: number; ms: number } | null
 }
 
 const app = new Hono<{ Bindings: Env }>()
@@ -137,13 +138,34 @@ async function extractFile(env: Env, file: File): Promise<ExtractResult> {
     }
   }
   const dataB64 = await fileToB64(file)
+
+  // PyTorch router: phân loại trước để định tuyến schema + gợi ý cho Gemini
+  let classifier: ExtractResult['classifier'] = null
+  if (env.GEMINI_PROXY_URL && env.GEMINI_PROXY_KEY) {
+    try {
+      const t0 = Date.now()
+      const resp = await fetch(`${env.GEMINI_PROXY_URL}/classify`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'x-proxy-key': env.GEMINI_PROXY_KEY },
+        body: JSON.stringify({ dataB64, mimeType: file.type || 'application/pdf' }),
+      })
+      if (resp.ok) {
+        const r = (await resp.json()) as { doc_type: string; confidence: number }
+        classifier = { doc_type: r.doc_type, confidence: r.confidence, ms: Date.now() - t0 }
+      }
+    } catch { /* router lỗi thì Gemini tự phân loại */ }
+  }
+
   let parsed: Partial<ExtractResult> = {}
   for (let attempt = 0; attempt < 3; attempt++) {
+    const routedPrompt = classifier
+      ? `${prompt}\n\nGợi ý từ bộ phân loại PyTorch: tài liệu này nhiều khả năng là "${classifier.doc_type}" (độ tin ${(classifier.confidence * 100).toFixed(0)}%). Hãy xác nhận hoặc sửa nếu thấy khác.`
+      : prompt
     const text = await generateContent(env, {
       model: 'gemini-3-flash-preview',
       mimeType: file.type || 'application/pdf',
       dataB64,
-      prompt,
+      prompt: routedPrompt,
     })
     try {
       parsed = JSON.parse(text) as Partial<ExtractResult>
@@ -155,12 +177,13 @@ async function extractFile(env: Env, file: File): Promise<ExtractResult> {
   }
   return {
     mode: 'gemini',
-    doc_type: parsed.doc_type ?? 'other',
+    doc_type: parsed.doc_type ?? classifier?.doc_type ?? 'other',
     doc_type_confidence: parsed.doc_type_confidence ?? 0,
     filename: file.name,
     size_bytes: file.size,
     fields: parsed.fields ?? [],
     warnings: parsed.warnings ?? [],
+    classifier,
   }
 }
 
@@ -269,9 +292,9 @@ app.post('/api/dossiers/:id/files', async (c) => {
   if (!files.length) return c.json({ error: 'Thiếu files' }, 400)
 
   await update(c.env, 'dossiers', `id=eq.${dossierId}`, { state: 'extracting' })
-  const results: object[] = []
 
-  for (const file of files) {
+  // Xử lý SONG SONG các file — cắt delay lớn nhất của pipeline (n×26s → ~26s)
+  const processOne = async (file: File): Promise<object> => {
     const ext = file.name.split('.').pop() || 'pdf'
     const path = `${dossierId}/${crypto.randomUUID()}.${ext}`
     await storageUpload(c.env, path, await file.arrayBuffer(), file.type || 'application/pdf')
@@ -308,17 +331,26 @@ app.post('/api/dossiers/:id/files', async (c) => {
         warnings: ex.warnings,
       }
       try {
-        await update(c.env, 'documents', `id=eq.${doc.id}`, { ...patch, extract_ms: extractMs })
+        await update(c.env, 'documents', `id=eq.${doc.id}`, {
+          ...patch,
+          extract_ms: extractMs,
+          classifier_type: ex.classifier?.doc_type ?? null,
+          classifier_confidence: ex.classifier?.confidence ?? null,
+        })
       } catch {
-        // DB chưa chạy migration 0002 (cột extract_ms) — vẫn lưu phần còn lại
-        await update(c.env, 'documents', `id=eq.${doc.id}`, patch)
+        try {
+          await update(c.env, 'documents', `id=eq.${doc.id}`, { ...patch, extract_ms: extractMs })
+        } catch {
+          await update(c.env, 'documents', `id=eq.${doc.id}`, patch)
+        }
       }
-      results.push({ file: file.name, doc_id: doc.id, doc_type: ex.doc_type, fields: ex.fields.length, extract_ms: extractMs, warnings: ex.warnings })
+      return { file: file.name, doc_id: doc.id, doc_type: ex.doc_type, fields: ex.fields.length, extract_ms: extractMs, classifier: ex.classifier, warnings: ex.warnings }
     } catch (e) {
       await update(c.env, 'documents', `id=eq.${doc.id}`, { state: 'failed' })
-      results.push({ file: file.name, doc_id: doc.id, error: e instanceof Error ? e.message : String(e) })
+      return { file: file.name, doc_id: doc.id, error: e instanceof Error ? e.message : String(e) }
     }
   }
+  const results = await Promise.all(files.map(processOne))
 
   const alerts = await runCrosscheck(c.env, dossierId)
 
@@ -380,10 +412,24 @@ app.post('/api/dossiers/:id/export', async (c) => {
   }
   const payload = {
     schema: 'shb.core-banking.loan-intake.v1',
+    // Ngôn ngữ tích hợp theo hệ thống thật của SHB: core Intellect (SOA/ESB, golive ~2010).
+    // Payload đứng TRƯỚC core, bắn qua middleware — không đụng core.
+    integration: {
+      target_system: 'Intellect Universal Banking (SOA/ESB)',
+      transport: 'REST → middleware/ESB adapter',
+      idempotency_key: d.id,
+    },
     dossier_id: d.id,
     dossier_name: d.name,
     exported_at: new Date().toISOString(),
-    customer: { full_name: pick('customer_name'), national_id: pick('national_id') },
+    // CIF = Customer Information File — khái niệm chuẩn của core banking
+    cif: {
+      full_name: pick('customer_name'),
+      national_id: pick('national_id'),
+      date_of_birth: pick('date_of_birth'),
+      address: pick('address'),
+      phone: pick('phone'),
+    },
     loan: { amount: pick('loan_amount'), term: pick('loan_term'), interest_rate: pick('interest_rate'), collateral: pick('collateral') },
     cash_flow: {
       revenue: pick('revenue'),

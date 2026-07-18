@@ -13,7 +13,7 @@
 |---|---|---|
 | Claude Code (Claude Fable 5) | Sinh toàn bộ code: scaffold, Worker API, UI, demo data, kiến trúc | Session files `~/.claude/projects/-Users-huynhtai-Developer-*` (ZIP nộp kèm) |
 | Google Gemini 2.5 Flash/Pro (Vertex AI) | Lõi trích xuất chứng từ trong sản phẩm (runtime) | Prompt trong `worker/index.ts` |
-| PyTorch (fine-tune tại sự kiện) | Model phân loại chứng từ, serve trên Google Cloud Run | `training/` (sẽ thêm) |
+| PyTorch (fine-tune tại sự kiện) | ResNet18 phân loại 4 loại chứng từ — ROUTER của pipeline, TorchScript trên Cloud Run | `training/` + `gcp-proxy/model.pt` |
 
 ## Nhật ký phiên làm việc
 
@@ -64,5 +64,16 @@
 - Modal so sánh 2 nguồn cạnh nhau khi giá trị lệch. Đo extract_ms. Chùm bbox nhiều dòng.
 - 5 bộ hồ sơ demo (generator + upload prod), fix normalize Đ→D (SWIFT không dấu),
   endpoint recheck, nút xóa bộ/chứng từ, bộ icon Lucide thay emoji, BACKLOG.md audit giải.
+
+### Phiên 6 — Sat 18/07 trưa (Claude Code)
+- Nghiên cứu core SHB (Intellect, SOA/ESB) → export payload nói ngôn ngữ CIF + integration metadata.
+- **PyTorch classifier end-to-end**: sinh dataset 720 ảnh augmented từ demo-data
+  (`training/make_dataset.py`), fine-tune ResNet18 3 epochs — **val acc 94.9%**
+  (`training/train.py`), xuất TorchScript, serve `/classify` trên Cloud Run (image v2).
+- Worker gọi router trước Gemini (gợi ý loại chứng từ vào prompt), xử lý các file
+  SONG SONG (n×26s → ~26s), lưu classifier_type/conf (migration 0004), chip 🔥 PyTorch trên UI.
+- Test prod: router 4/4 đúng 99–100% conf, 120–293ms/lượt; E2E router+Gemini khớp nhau.
+- Bench accuracy trích xuất: 95% field đúng (loại flake), p50 26s — metrics/ACCURACY.md.
+- Dossier mentor SHB (MENTORS-SHB.md), PITCH.md 7 màn, scan giả lập, cash_flow fields.
 
 <!-- Thêm phiên mới theo format trên. Mỗi phiên: thời gian, việc AI làm, file liên quan. -->

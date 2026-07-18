@@ -19,6 +19,8 @@ export type Doc = {
   doc_type_confidence: number
   state: string
   extract_ms?: number | null
+  classifier_type?: string | null
+  classifier_confidence?: number | null
   warnings: string[]
   fields: Field[]
 }

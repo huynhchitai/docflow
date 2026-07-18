@@ -15,7 +15,7 @@ import { DocViewer, type Highlight } from './DocViewer'
 import { CANONICAL_FIELDS, normalize } from '../shared/fields'
 import { ACCESS_KEY } from './api'
 import {
-  ArrowLeft, FolderPlus, Landmark, Pencil,
+  ArrowLeft, Flame, FolderPlus, Landmark, Pencil,
   Scale, Settings2, Timer, Trash2, User as UserIcon,
 } from 'lucide-react'
 
@@ -429,6 +429,11 @@ function Dossier({ id, onBack }: { id: string; onBack: () => void }) {
                   {(doc.doc_type_confidence * 100).toFixed(0)}%
                 </span>
                 <span className="file">{doc.filename}</span>
+                {doc.classifier_type && (
+                  <span className="pytorch-chip" title={`PyTorch router (ResNet18 fine-tune): ${doc.classifier_type}`}>
+                    <Flame size={12} /> PyTorch {((doc.classifier_confidence ?? 0) * 100).toFixed(0)}%
+                  </span>
+                )}
                 {doc.extract_ms != null && (
                   <span className="timing" title="Thời gian phân loại + trích xuất">
                     <Timer size={12} /> {(doc.extract_ms / 1000).toFixed(1)}s

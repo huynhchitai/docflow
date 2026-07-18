@@ -31,8 +31,9 @@
 - ✅ Skin SHB · ✅ luồng nghiệp vụ đúng đề · ✅ pilot pathway trong README
 
 ### 🔥 META PyTorch 130tr
-- 🔴 **PyTorch classifier CHƯA TỒN TẠI** — tồn đọng lớn nhất. Bạn C: augmented data từ demo-data (xoay/mờ/nhiễu) → fine-tune ResNet18 phân loại 5 loại chứng từ → endpoint `/classify` vào Cloud Run proxy (image v2) → Worker gọi trước Gemini làm router. Không có nó = mất trắng 130tr
-- 🔴 Ghi rõ vai trò PyTorch trong pitch: "router quyết định luồng, không phải đồ trang trí"
+- ✅ **PyTorch classifier XONG**: ResNet18 fine-tune (val acc 94.9%, dataset 720 ảnh augmented), TorchScript trên Cloud Run, router 4/4 đúng 99–100% @ 120–293ms, gợi ý vào prompt Gemini, chip 🔥 trên UI. Code: training/ + gcp-proxy/
+- ✅ Vai trò PyTorch ghi trong PITCH.md màn 6: "router quyết định luồng"
+- 🟡 Chạy migration 0004 (2 dòng — cột classifier_type/confidence) để chip 🔥 hiện trên UI
 
 ### ⏰ Checkpoint 2 (hạn 23:00 hôm nay)
 - 🟡 Form ĐÃ ĐIỀN SẴN (URL + GitHub + credentials) — lead chỉ bấm Nộp sau 12:00. **Nộp trước 21:00**

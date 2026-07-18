@@ -820,3 +820,15 @@ button.icon-only { padding: 6px 8px; }
 button.danger { color: var(--bad); border-color: #f1b4c4; }
 button.danger:hover { border-color: var(--bad); color: var(--bad); }
 .profile-avatar { justify-content: center; color: #fff; }
+
+.pytorch-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-family: var(--mono);
+  font-size: 0.72rem;
+  color: #b3410f;
+  background: #ffe8d9;
+  padding: 2px 8px;
+  border-radius: 6px 6px 6px var(--r-sq);
+}
