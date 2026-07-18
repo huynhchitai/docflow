@@ -392,6 +392,35 @@ app.post('/api/dossiers/:id/export', async (c) => {
   return c.json(payload)
 })
 
+// Tính lại cross-check cho một bộ hồ sơ (sau khi đổi quy tắc / sửa field)
+app.post('/api/dossiers/:id/recheck', async (c) => {
+  const dossierId = c.req.param('id')
+  const docs = await select<{ id: string; filename: string }>(
+    c.env, 'documents', `select=id,filename&dossier_id=eq.${dossierId}`,
+  )
+  const docIds = docs.map((d) => d.id).join(',')
+  const fields = docIds
+    ? await select<FieldRow>(c.env, 'fields', `select=id,document_id,key,label,value&document_id=in.(${docIds})`)
+    : []
+  const labelMap = new Map(docs.map((d) => [d.id, d.filename]))
+  const alerts = crosscheck(fields, labelMap, await mergedSpecs(c.env))
+  try {
+    const [row] = await select<{ customer_name: string | null }>(
+      c.env, 'dossiers', `select=customer_name&id=eq.${dossierId}`,
+    )
+    if (row?.customer_name) alerts.push(...checkDeclaredName(row.customer_name, fields, labelMap))
+  } catch { /* chưa migration 0003 */ }
+  await fetch(`${c.env.SUPABASE_URL}/rest/v1/crosscheck_alerts?dossier_id=eq.${dossierId}`, {
+    method: 'DELETE',
+    headers: { apikey: c.env.SUPABASE_SECRET_KEY!, Authorization: `Bearer ${c.env.SUPABASE_SECRET_KEY}` },
+  })
+  if (alerts.length) await insert(c.env, 'crosscheck_alerts', alerts.map((a) => ({ ...a, dossier_id: dossierId })))
+  await update(c.env, 'dossiers', `id=eq.${dossierId}`, {
+    state: alerts.some((a) => a.severity === 'critical') ? 'needs_review' : 'done',
+  })
+  return c.json({ alerts })
+})
+
 // ---- Cấu hình trường dữ liệu ----
 app.get('/api/field-specs', async (c) => {
   const customs = await customSpecs(c.env)

@@ -42,6 +42,7 @@ export function normalize(kind: NormKind, s: string): string {
         .toUpperCase()
         .normalize('NFD')
         .replace(/[̀-ͯ]/g, '')
+        .replace(/Đ/g, 'D') // Đ là chữ riêng, NFD không tách được — SWIFT viết "DAT" vs "ĐẠT"
         .replace(/\s+/g, ' ')
         .trim()
     case 'text_loose':
