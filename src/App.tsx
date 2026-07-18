@@ -258,7 +258,7 @@ function DossierList({ onOpen, onFields, onGuide }: { onOpen: (id: string) => vo
           <div className="stat"><span className="stat-n">{stats.fields_total}</span><span className="stat-l">trường trích xuất</span></div>
           <div className="stat"><span className="stat-n">{stats.fields_auto_pct}%</span><span className="stat-l">tự động, không sửa tay</span></div>
           <div className="stat"><span className="stat-n">{stats.avg_extract_ms != null ? (stats.avg_extract_ms / 1000).toFixed(1) + 's' : '—'}</span><span className="stat-l">TB / chứng từ</span></div>
-          <div className={`stat ${stats.critical_alerts ? 'stat-bad' : ''}`}><span className="stat-n">{stats.critical_alerts ? '🚨 ' : ''}{stats.critical_alerts}</span><span className="stat-l">cảnh báo nghiêm trọng</span></div>
+          <div className={`stat ${stats.critical_alerts ? 'stat-bad' : ''}`}><span className="stat-n">{stats.critical_alerts}</span><span className="stat-l">cảnh báo nghiêm trọng</span></div>
         </div>
       )}
 
@@ -457,7 +457,7 @@ function Dossier({ id, onBack }: { id: string; onBack: () => void }) {
               {doc.warnings.length > 0 && (
                 <div className="banner warn small">
                   {doc.warnings.map((w) => (
-                    <div key={w}>⚠️ {w}</div>
+                    <div key={w} className="alert-row"><AlertTriangle size={13} /> {w}</div>
                   ))}
                 </div>
               )}
