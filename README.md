@@ -150,6 +150,7 @@ Chi tiết đầy đủ (sơ đồ mermaid, pipeline, data model, lý do chọn 
 - **Cross-check engine** chạy rule thuần TypeScript theo [từ điển trường chuẩn](shared/fields.ts) — "AI đọc, code đối chiếu, người quyết định"
 - **Export nói ngôn ngữ core banking**: khối CIF + integration metadata nhắm Intellect Universal Banking (SOA/ESB) của SHB — adapter đứng trước core theo đúng nguyên tắc tích hợp hệ thống cũ
 - API khóa bằng access code từ tầng Worker; RLS bật trên mọi bảng; retry 3 lần có backoff khi model flake
+- **Lộ trình distillation**: mỗi trường được người phê duyệt là một nhãn ground truth kèm bbox — review queue chính là dây chuyền gán nhãn. Đủ dữ liệu vận hành thì các loại chứng từ layout ổn định chuyển dần sang extractor PyTorch chuyên biệt chạy on-prem (dữ liệu không rời ngân hàng, chi phí biên tiệm cận 0), Gemini rút về làm lưới an toàn cho ca khó
 
 ## Chạy local
 

@@ -53,3 +53,21 @@
 - **Sao không để AI tự đối chiếu?** → bộ phận bắt sai lệch mà dùng model thì chính nó có thể bịa; rule thuần + từ điển trường chuẩn (shared/fields.ts).
 - **Bảo mật dữ liệu?** → access code tầng API, RLS mọi bảng, credentials chỉ giám khảo thấy qua BTC, file trong private bucket.
 - **Scale?** → serverless toàn tuyến (Worker + Cloud Run + Vertex), chi phí tuyến tính theo trang; 10.000 bộ/ngày ≈ 5 triệu đồng AI.
+- **Sao không PyTorch toàn phần cho rẻ? / Phụ thuộc Gemini?** → kể câu chuyện distillation flywheel (dưới).
+
+## Câu chuyện dự phòng — "LLM để bootstrap PyTorch" (30s, dùng khi Q&A chạm chi phí/phụ thuộc)
+
+> "Hôm nay, con AI đắt nhất trong hệ thống của tụi em có giá 500 đồng một bộ hồ sơ.
+> Nhưng câu hỏi đúng không phải là 'sao không dùng model rẻ hơn' — mà là 'lấy đâu ra
+> dữ liệu để train model rẻ hơn'. DocFlow trả lời bằng chính vận hành: mỗi trường được
+> cán bộ phê duyệt là một nhãn chuẩn có người kiểm chứng, kèm tọa độ trên giấy.
+> Ba tháng pilot là vài trăm nghìn nhãn. Khi đó tụi em distill: từng loại chứng từ
+> layout ổn định — CCCD, điện MT103 — chuyển dần sang extractor PyTorch chuyên biệt,
+> chạy on-prem ngay trong hạ tầng SHB. Dữ liệu không rời ngân hàng. Chi phí biên tiệm
+> cận không. Gemini rút về làm lưới an toàn cho ca khó: viết tay, mờ, loại giấy tờ mới.
+> Tụi em không chọn giữa LLM và PyTorch — tụi em dùng LLM để bootstrap PyTorch."
+
+Vì sao chuyện này mạnh: META thấy PyTorch là **đích đến** của kiến trúc chứ không chỉ router;
+SHB thấy on-prem + chủ quyền dữ liệu (hơn prototype Bedrock của họ — vốn kẹt trên cloud);
+giám khảo kinh doanh thấy flywheel dữ liệu = moat. Số chống lưng: review queue + audit log
+chính là dây chuyền gán nhãn — 10k bộ/tháng × ~15 trường × 4 chứng từ ≈ nửa triệu nhãn/tháng.
