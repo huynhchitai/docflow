@@ -162,3 +162,7 @@ Toàn bộ code sinh bởi AI trong cửa sổ 48h của hackathon. Nhật ký c
 ## Team OCanbubu
 
 Vietnam AI Innovation Challenge 2026 · Đà Nẵng · 17–19/07/2026
+
+## Bản quyền
+
+Mã nguồn công khai để phục vụ chấm thi — mọi quyền được bảo lưu bởi Team OCanbubu. Xem [LICENSE](LICENSE).
