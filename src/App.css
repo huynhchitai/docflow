@@ -912,3 +912,20 @@ button.danger:hover { border-color: var(--bad); color: var(--bad); }
 
 .modal-actions { display: flex; gap: 10px; margin: 0 16px; }
 .modal-body .modal-actions button { margin: 0; }
+
+/* ---------- Setup section ---------- */
+.setup-step {
+  background: var(--navy-800); border: 1px solid var(--line);
+  border-radius: var(--r) var(--r) var(--r) var(--r-sq);
+  padding: 14px 16px; margin-bottom: 10px;
+}
+.setup-step h4 { margin: 0 0 6px; font-size: 0.95rem; }
+.setup-step p { margin: 0 0 8px; color: var(--muted); font-size: 0.88rem; }
+.setup-code { position: relative; }
+.setup-code pre {
+  margin: 0; background: #10203f; color: #d9e4f8; border-radius: 10px 10px 10px var(--r-sq);
+  padding: 12px 14px; font-family: var(--mono); font-size: 0.76rem; line-height: 1.7;
+  overflow-x: auto; white-space: pre;
+}
+.setup-code button { position: absolute; top: 8px; right: 8px; background: rgba(255,255,255,0.08); color: #cdd9f0; border-color: #2a3b5e; }
+.setup-code button:hover { color: #fff; border-color: var(--cam); }

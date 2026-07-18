@@ -1,6 +1,6 @@
-import { useState } from 'react'
+import { useLayoutEffect, useRef, useState } from 'react'
 import {
-  ArrowLeft, FileUp, ScanSearch, ShieldAlert, PencilLine, Landmark, Settings2, Flame,
+  ArrowLeft, Check, Copy, FileUp, ScanSearch, ShieldAlert, PencilLine, Landmark, Settings2, Flame, TerminalSquare,
 } from 'lucide-react'
 
 // ============ Hướng dẫn sử dụng tương tác ============
@@ -45,24 +45,42 @@ const STEPS = [
   },
 ]
 
-// Mini-demo: mô phỏng click-to-highlight trên "bản scan" vẽ bằng HTML
-const DEMO_FIELDS: { label: string; value: string; conf: number; box: [number, number, number, number] }[] = [
-  { label: 'Họ và tên', value: 'NGUYỄN VĂN AN', conf: 98, box: [24, 34, 9, 40] },
-  { label: 'Số CCCD', value: '079088012345', conf: 95, box: [37, 34, 8, 32] },
-  { label: 'Số tiền vay', value: '1.500.000.000 đồng', conf: 100, box: [58, 34, 8, 44] },
-  { label: 'Tài sản bảo đảm', value: 'Căn hộ B12-08 Sunrise Riverside', conf: 82, box: [71, 34, 16, 58] },
+// Mini-demo: mô phỏng click-to-highlight — khung highlight ĐO vị trí thật của chữ trong DOM
+const DEMO_FIELDS = [
+  { key: 'name', label: 'Họ và tên', value: 'NGUYỄN VĂN AN', conf: 98 },
+  { key: 'cccd', label: 'Số CCCD', value: '079088012345', conf: 95 },
+  { key: 'amount', label: 'Số tiền vay', value: '1.500.000.000 đồng', conf: 100 },
+  { key: 'collateral', label: 'Tài sản bảo đảm', value: 'Căn hộ B12-08 Sunrise Riverside', conf: 82 },
 ]
 
 function MiniDemo() {
   const [active, setActive] = useState(1)
-  const f = DEMO_FIELDS[active]
+  const paperRef = useRef<HTMLDivElement>(null)
+  const [box, setBox] = useState<{ top: number; left: number; w: number; h: number } | null>(null)
+
+  const measure = (key: string) => {
+    const paper = paperRef.current
+    const el = paper?.querySelector<HTMLElement>(`[data-demo="${key}"]`)
+    if (!paper || !el) return
+    const p = paper.getBoundingClientRect()
+    const r = el.getBoundingClientRect()
+    setBox({ top: r.top - p.top - 3, left: r.left - p.left - 5, w: r.width + 10, h: r.height + 6 })
+  }
+
+  useLayoutEffect(() => {
+    measure(DEMO_FIELDS[active].key)
+    const onResize = () => measure(DEMO_FIELDS[active].key)
+    window.addEventListener('resize', onResize)
+    return () => window.removeEventListener('resize', onResize)
+  }, [active])
+
   return (
     <div className="minidemo">
       <div className="minidemo-fields">
         <p className="minidemo-hint">Click một trường — khung cam nhảy đúng chỗ trên "bản scan":</p>
         {DEMO_FIELDS.map((d, i) => (
           <button
-            key={d.label}
+            key={d.key}
             className={`minidemo-field ${i === active ? 'on' : ''}`}
             onClick={() => setActive(i)}
           >
@@ -73,25 +91,78 @@ function MiniDemo() {
         ))}
       </div>
       <div className="minidemo-doc" aria-hidden="true">
-        <div className="minidemo-paper">
+        <div className="minidemo-paper" ref={paperRef}>
           <div className="mp-title">GIẤY ĐỀ NGHỊ VAY VỐN</div>
-          <div className="mp-line"><b>Họ và tên:</b> NGUYỄN VĂN AN</div>
-          <div className="mp-line"><b>Số CCCD:</b> 079088012345</div>
+          <div className="mp-line"><b>Họ và tên:</b> <span data-demo="name">NGUYỄN VĂN AN</span></div>
+          <div className="mp-line"><b>Số CCCD:</b> <span data-demo="cccd">079088012345</span></div>
           <div className="mp-line mp-dim">Địa chỉ: Số 12 Trần Phú, Hải Châu, Đà Nẵng</div>
-          <div className="mp-line"><b>Số tiền vay:</b> 1.500.000.000 đồng</div>
+          <div className="mp-line"><b>Số tiền vay:</b> <span data-demo="amount">1.500.000.000 đồng</span></div>
           <div className="mp-line mp-dim">Thời hạn: 36 tháng · Lãi suất: 8,5%/năm</div>
-          <div className="mp-line"><b>TSBĐ:</b> Căn hộ B12-08 Sunrise Riverside,<br />GCN QSDĐ số CS 123456</div>
-          <div
-            className="hl-box"
-            style={{
-              top: `${f.box[0]}%`,
-              left: `${f.box[1]}%`,
-              height: `${f.box[2]}%`,
-              width: `${f.box[3]}%`,
-            }}
-          />
+          <div className="mp-line"><b>TSBĐ:</b> <span data-demo="collateral">Căn hộ B12-08 Sunrise Riverside</span>,<br />GCN QSDĐ số CS 123456</div>
+          {box && (
+            <div
+              className="hl-box"
+              style={{ top: box.top, left: box.left, height: box.h, width: box.w }}
+            />
+          )}
         </div>
       </div>
+    </div>
+  )
+}
+
+// ---- Setup full: từng khối lệnh copy được ----
+const SETUP_STEPS: { title: string; desc: string; code: string }[] = [
+  {
+    title: 'Clone & cài đặt',
+    desc: 'Cần Node 22+ và pnpm.',
+    code: 'git clone https://github.com/huynhchitai/docflow\ncd docflow\npnpm install',
+  },
+  {
+    title: 'Cấu hình Supabase',
+    desc: 'Tạo project Supabase → dán lần lượt các file supabase/migrations/*.sql vào SQL Editor → tạo bucket "scans" (private). Rồi điền secrets:',
+    code: 'cp .env.example .dev.vars\n# điền SUPABASE_URL + SUPABASE_SECRET_KEY (service_role)',
+  },
+  {
+    title: 'Deploy Cloud Run proxy (Vertex AI + PyTorch router)',
+    desc: 'Chạy bằng service account ADC — không cần key file. Model đã có sẵn tại gcp-proxy/model.pt (muốn train lại: training/make_dataset.py + train.py).',
+    code: 'gcloud services enable aiplatform.googleapis.com run.googleapis.com artifactregistry.googleapis.com\ngcloud iam service-accounts create docflow-vertex\ngcloud projects add-iam-policy-binding $PROJECT --member serviceAccount:docflow-vertex@$PROJECT.iam.gserviceaccount.com --role roles/aiplatform.user\ncd gcp-proxy\ndocker build --platform linux/amd64 -t $REGION-docker.pkg.dev/$PROJECT/docflow/gemini-proxy:v1 . && docker push $REGION-docker.pkg.dev/$PROJECT/docflow/gemini-proxy:v1\ngcloud run deploy docflow-gemini-proxy --image $REGION-docker.pkg.dev/$PROJECT/docflow/gemini-proxy:v1 --service-account docflow-vertex@$PROJECT.iam.gserviceaccount.com --allow-unauthenticated --memory 1Gi --set-env-vars PROXY_KEY=$RANDOM_SECRET,GCP_LOCATION=global',
+  },
+  {
+    title: 'Deploy Cloudflare Worker + web',
+    desc: 'GEMINI_PROXY_URL đặt trong wrangler.jsonc (vars); các secret đẩy bằng wrangler.',
+    code: 'npx wrangler secret put SUPABASE_URL\nnpx wrangler secret put SUPABASE_SECRET_KEY\nnpx wrangler secret put GEMINI_PROXY_KEY\nnpx wrangler secret put ACCESS_CODE\npnpm build && npx wrangler deploy',
+  },
+  {
+    title: '(Tùy chọn) Gắn domain riêng',
+    desc: 'Zone phải nằm trong cùng tài khoản Cloudflare. Thêm vào wrangler.jsonc rồi deploy lại:',
+    code: '"routes": [{ "pattern": "docflow.example.com", "custom_domain": true }]',
+  },
+]
+
+function SetupSection() {
+  const [copied, setCopied] = useState<number | null>(null)
+  return (
+    <div className="setup-steps">
+      {SETUP_STEPS.map((s, i) => (
+        <div key={s.title} className="setup-step">
+          <h4>{i + 1}. {s.title}</h4>
+          <p>{s.desc}</p>
+          <div className="setup-code">
+            <pre>{s.code.split('\\n').join('\n')}</pre>
+            <button
+              className="ghost small"
+              onClick={async () => {
+                await navigator.clipboard.writeText(s.code.split('\\n').join('\n'))
+                setCopied(i)
+                setTimeout(() => setCopied(null), 1500)
+              }}
+            >
+              {copied === i ? <><Check size={13} /> Đã copy</> : <><Copy size={13} /> Copy</>}
+            </button>
+          </div>
+        </div>
+      ))}
     </div>
   )
 }
@@ -168,6 +239,9 @@ export function Guide({ onBack }: { onBack: () => void }) {
           <p>Toàn bộ hư cấu, có watermark "TÀI LIỆU MẪU", cài sẵn lỗi lệch CCCD/số tiền/kỳ hạn để trình diễn cảnh báo. Không có PII thật nào trong hệ thống.</p>
         </details>
       </div>
+
+      <h3 className="guide-h3"><TerminalSquare size={17} /> Tự triển khai từ đầu (setup full)</h3>
+      <SetupSection />
 
       <div className="guide-cta">
         <button onClick={onBack}>Vào dùng thật →</button>
