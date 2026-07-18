@@ -128,6 +128,10 @@ export const api = {
     }).then((r) => j<Field>(r)),
   exportDossier: (id: string) =>
     fetch(`/api/dossiers/${id}/export`, { method: 'POST', headers: accessHeaders() }).then((r) => j<object>(r)),
+  deleteDossier: (id: string) =>
+    fetch(`/api/dossiers/${id}`, { method: 'DELETE', headers: accessHeaders() }).then((r) => j<object>(r)),
+  deleteDocument: (id: string) =>
+    fetch(`/api/documents/${id}`, { method: 'DELETE', headers: accessHeaders() }).then((r) => j<object>(r)),
   fileUrl: (docId: string) => `/api/documents/${docId}/file`,
 }
 

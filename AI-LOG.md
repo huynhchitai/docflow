@@ -56,4 +56,13 @@
   vẽ khung cam + dim nền đúng vùng box_2d trên bản scan gốc (killer feature demo).
 - Deploy + smoke test: dossier "Nguyễn Văn An" state needs_review, 2 chứng từ, 1 alert critical.
 
+### Phiên 5 — Sat 18/07 sáng (Claude Code)
+- Cổng access code (Worker middleware + trang đăng nhập), README chuẩn hướng dẫn sử dụng.
+- shared/fields.ts: từ điển trường chuẩn dùng chung prompt + cross-check + UI.
+- Form tạo/sửa bộ hồ sơ (tên khách khai báo → đối chiếu declared vs extracted).
+- Trang ⚙️ Trường dữ liệu (thêm/bớt trường custom, hiệu lực ngay), dashboard KPI (/api/stats).
+- Modal so sánh 2 nguồn cạnh nhau khi giá trị lệch. Đo extract_ms. Chùm bbox nhiều dòng.
+- 5 bộ hồ sơ demo (generator + upload prod), fix normalize Đ→D (SWIFT không dấu),
+  endpoint recheck, nút xóa bộ/chứng từ, bộ icon Lucide thay emoji, BACKLOG.md audit giải.
+
 <!-- Thêm phiên mới theo format trên. Mỗi phiên: thời gian, việc AI làm, file liên quan. -->

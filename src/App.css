@@ -808,3 +808,15 @@ footer {
 .spec-table { margin-top: 18px; background: var(--navy-800); border: 1px solid var(--line); border-radius: var(--r); overflow: hidden; }
 .spec-table tr.builtin td { opacity: 0.75; }
 button.small { padding: 5px 12px; font-size: 0.76rem; }
+
+/* ---------- Icon alignment (bộ icon Lucide thống nhất) ---------- */
+button, .viewer-head, .timing, .profile-avatar {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.viewer-head { display: flex; }
+button.icon-only { padding: 6px 8px; }
+button.danger { color: var(--bad); border-color: #f1b4c4; }
+button.danger:hover { border-color: var(--bad); color: var(--bad); }
+.profile-avatar { justify-content: center; color: #fff; }

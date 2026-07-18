@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import * as pdfjs from 'pdfjs-dist'
 import workerUrl from 'pdfjs-dist/build/pdf.worker.min.mjs?url'
 import { api, accessHeaders } from './api'
+import { Search } from 'lucide-react'
 
 pdfjs.GlobalWorkerOptions.workerSrc = workerUrl
 
@@ -106,7 +107,7 @@ export function DocViewer({ hl }: { hl: Highlight }) {
   return (
     <div className="viewer" ref={wrapRef}>
       <div className="viewer-head">
-        🔍 {hl.label} · trang {hl.page}
+        <Search size={14} /> {hl.label} · trang {hl.page}
       </div>
       {error && <div className="banner error">⚠️ {error}</div>}
       <div className="viewer-stage">

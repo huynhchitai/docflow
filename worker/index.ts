@@ -163,6 +163,39 @@ async function extractFile(env: Env, file: File): Promise<ExtractResult> {
   }
 }
 
+
+async function sbHeaders(env: Env) {
+  return { apikey: env.SUPABASE_SECRET_KEY!, Authorization: `Bearer ${env.SUPABASE_SECRET_KEY}` }
+}
+
+async function runCrosscheck(env: Env, dossierId: string) {
+  const docs = await select<{ id: string; filename: string }>(
+    env, 'documents', `select=id,filename&dossier_id=eq.${dossierId}`,
+  )
+  const docIds = docs.map((d) => d.id).join(',')
+  const fields = docIds
+    ? await select<FieldRow>(env, 'fields', `select=id,document_id,key,label,value&document_id=in.(${docIds})`)
+    : []
+  const labelMap = new Map(docs.map((d) => [d.id, d.filename]))
+  const alerts = crosscheck(fields, labelMap, await mergedSpecs(env))
+  try {
+    const [row] = await select<{ customer_name: string | null }>(
+      env, 'dossiers', `select=customer_name&id=eq.${dossierId}`,
+    )
+    if (row?.customer_name) alerts.push(...checkDeclaredName(row.customer_name, fields, labelMap))
+  } catch { /* chưa migration 0003 */ }
+  await fetch(`${env.SUPABASE_URL}/rest/v1/crosscheck_alerts?dossier_id=eq.${dossierId}`, {
+    method: 'DELETE', headers: await sbHeaders(env),
+  })
+  if (alerts.length) {
+    await insert(env, 'crosscheck_alerts', alerts.map((a) => ({ ...a, dossier_id: dossierId })))
+  }
+  await update(env, 'dossiers', `id=eq.${dossierId}`, {
+    state: alerts.some((a) => a.severity === 'critical') ? 'needs_review' : 'done',
+  })
+  return alerts
+}
+
 // ---- Extract nhanh không lưu (demo đơn lẻ, giữ tương thích UI cũ) ----
 app.post('/api/extract', async (c) => {
   const form = await c.req.formData()
@@ -286,38 +319,7 @@ app.post('/api/dossiers/:id/files', async (c) => {
     }
   }
 
-  // Cross-check toàn bộ dossier (xóa alert cũ, tính lại)
-  const docs = await select<{ id: string; filename: string; doc_type: string }>(
-    c.env,
-    'documents',
-    `select=id,filename,doc_type&dossier_id=eq.${dossierId}`,
-  )
-  const docIds = docs.map((d) => d.id).join(',')
-  const fields = docIds
-    ? await select<FieldRow>(c.env, 'fields', `select=id,document_id,key,label,value&document_id=in.(${docIds})`)
-    : []
-  const labelMap = new Map(docs.map((d) => [d.id, d.filename]))
-  const specs = await mergedSpecs(c.env)
-  const alerts = crosscheck(fields, labelMap, specs)
-  // Đối chiếu tên khách khai báo lúc tạo bộ với tên trích từ chứng từ
-  try {
-    const [dossierRow] = await select<{ customer_name: string | null }>(
-      c.env, 'dossiers', `select=customer_name&id=eq.${dossierId}`,
-    )
-    if (dossierRow?.customer_name) {
-      alerts.push(...checkDeclaredName(dossierRow.customer_name, fields, labelMap))
-    }
-  } catch { /* chưa migration 0003 */ }
-  await fetch(`${c.env.SUPABASE_URL}/rest/v1/crosscheck_alerts?dossier_id=eq.${dossierId}`, {
-    method: 'DELETE',
-    headers: { apikey: c.env.SUPABASE_SECRET_KEY!, Authorization: `Bearer ${c.env.SUPABASE_SECRET_KEY}` },
-  })
-  if (alerts.length) {
-    await insert(c.env, 'crosscheck_alerts', alerts.map((a) => ({ ...a, dossier_id: dossierId })))
-  }
-  await update(c.env, 'dossiers', `id=eq.${dossierId}`, {
-    state: alerts.some((a) => a.severity === 'critical') ? 'needs_review' : 'done',
-  })
+  const alerts = await runCrosscheck(c.env, dossierId)
 
   return c.json({ processed: results, alerts })
 })
@@ -394,31 +396,35 @@ app.post('/api/dossiers/:id/export', async (c) => {
 
 // Tính lại cross-check cho một bộ hồ sơ (sau khi đổi quy tắc / sửa field)
 app.post('/api/dossiers/:id/recheck', async (c) => {
-  const dossierId = c.req.param('id')
-  const docs = await select<{ id: string; filename: string }>(
-    c.env, 'documents', `select=id,filename&dossier_id=eq.${dossierId}`,
-  )
-  const docIds = docs.map((d) => d.id).join(',')
-  const fields = docIds
-    ? await select<FieldRow>(c.env, 'fields', `select=id,document_id,key,label,value&document_id=in.(${docIds})`)
-    : []
-  const labelMap = new Map(docs.map((d) => [d.id, d.filename]))
-  const alerts = crosscheck(fields, labelMap, await mergedSpecs(c.env))
-  try {
-    const [row] = await select<{ customer_name: string | null }>(
-      c.env, 'dossiers', `select=customer_name&id=eq.${dossierId}`,
-    )
-    if (row?.customer_name) alerts.push(...checkDeclaredName(row.customer_name, fields, labelMap))
-  } catch { /* chưa migration 0003 */ }
-  await fetch(`${c.env.SUPABASE_URL}/rest/v1/crosscheck_alerts?dossier_id=eq.${dossierId}`, {
-    method: 'DELETE',
-    headers: { apikey: c.env.SUPABASE_SECRET_KEY!, Authorization: `Bearer ${c.env.SUPABASE_SECRET_KEY}` },
-  })
-  if (alerts.length) await insert(c.env, 'crosscheck_alerts', alerts.map((a) => ({ ...a, dossier_id: dossierId })))
-  await update(c.env, 'dossiers', `id=eq.${dossierId}`, {
-    state: alerts.some((a) => a.severity === 'critical') ? 'needs_review' : 'done',
-  })
+  const alerts = await runCrosscheck(c.env, c.req.param('id'))
   return c.json({ alerts })
+})
+
+// Xóa cả bộ hồ sơ (kèm file trong Storage)
+app.delete('/api/dossiers/:id', async (c) => {
+  const id = c.req.param('id')
+  const docs = await select<{ storage_path: string }>(
+    c.env, 'documents', `select=storage_path&dossier_id=eq.${id}`,
+  )
+  const h = await sbHeaders(c.env)
+  for (const d of docs) {
+    await fetch(`${c.env.SUPABASE_URL}/storage/v1/object/scans/${d.storage_path}`, { method: 'DELETE', headers: h })
+  }
+  await fetch(`${c.env.SUPABASE_URL}/rest/v1/dossiers?id=eq.${id}`, { method: 'DELETE', headers: h })
+  return c.json({ ok: true })
+})
+
+// Xóa một chứng từ + tính lại cross-check
+app.delete('/api/documents/:id', async (c) => {
+  const [doc] = await select<{ storage_path: string; dossier_id: string }>(
+    c.env, 'documents', `select=storage_path,dossier_id&id=eq.${c.req.param('id')}`,
+  )
+  if (!doc) return c.json({ error: 'Không tìm thấy' }, 404)
+  const h = await sbHeaders(c.env)
+  await fetch(`${c.env.SUPABASE_URL}/storage/v1/object/scans/${doc.storage_path}`, { method: 'DELETE', headers: h })
+  await fetch(`${c.env.SUPABASE_URL}/rest/v1/documents?id=eq.${c.req.param('id')}`, { method: 'DELETE', headers: h })
+  const alerts = await runCrosscheck(c.env, doc.dossier_id)
+  return c.json({ ok: true, alerts })
 })
 
 // ---- Cấu hình trường dữ liệu ----

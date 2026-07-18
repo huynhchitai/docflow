@@ -14,6 +14,10 @@ import {
 import { DocViewer, type Highlight } from './DocViewer'
 import { CANONICAL_FIELDS, normalize } from '../shared/fields'
 import { ACCESS_KEY } from './api'
+import {
+  ArrowLeft, FolderPlus, Landmark, Pencil,
+  Scale, Settings2, Timer, Trash2, User as UserIcon,
+} from 'lucide-react'
 
 function confidenceClass(c: number) {
   if (c >= 0.9) return 'conf high'
@@ -108,7 +112,7 @@ function CustomerProfile({
   return (
     <div className="profile-card">
       <div className="profile-head">
-        <span className="profile-avatar" aria-hidden="true">👤</span>
+        <span className="profile-avatar" aria-hidden="true"><UserIcon size={16} /></span>
         <strong>Thông tin chung khách hàng</strong>
         <span className="profile-note">tổng hợp từ {docs.length} chứng từ — click để soi nguồn</span>
       </div>
@@ -258,9 +262,9 @@ function DossierList({ onOpen, onFields }: { onOpen: (id: string) => void; onFie
       )}
 
       <div className="list-bar">
-        <button onClick={() => setShowCreate(true)}>+ Tạo bộ hồ sơ</button>
+        <button onClick={() => setShowCreate(true)}><FolderPlus size={15} /> Tạo bộ hồ sơ</button>
         <span className="spacer" />
-        <button className="ghost" onClick={onFields}>⚙️ Trường dữ liệu</button>
+        <button className="ghost" onClick={onFields}><Settings2 size={15} /> Trường dữ liệu</button>
       </div>
 
       {error && <div className="banner error">⚠️ {error}</div>}
@@ -356,12 +360,22 @@ function Dossier({ id, onBack }: { id: string; onBack: () => void }) {
   return (
     <>
       <div className="detail-bar">
-        <button className="ghost" onClick={onBack}>← Danh sách</button>
+        <button className="ghost" onClick={onBack}><ArrowLeft size={15} /> Danh sách</button>
         <strong>{d.name}</strong>
         <span className={`chip state-${d.state}`}>{STATE_LABELS[d.state] ?? d.state}</span>
         <span className="spacer" />
-        <button className="ghost" onClick={() => setShowEdit(true)}>✎ Sửa</button>
-        <button onClick={doExport} disabled={!d.documents.length}>🏦 Export core-banking</button>
+        <button className="ghost" onClick={() => setShowEdit(true)}><Pencil size={15} /> Sửa</button>
+        <button
+          className="ghost danger"
+          onClick={async () => {
+            if (!confirm(`Xóa cả bộ hồ sơ "${d.name}" (kèm ${d.documents.length} chứng từ)?`)) return
+            await api.deleteDossier(id)
+            onBack()
+          }}
+        >
+          <Trash2 size={15} /> Xóa
+        </button>
+        <button onClick={doExport} disabled={!d.documents.length}><Landmark size={15} /> Export core-banking</button>
       </div>
 
       {(d.customer_name || d.note) && (
@@ -417,9 +431,20 @@ function Dossier({ id, onBack }: { id: string; onBack: () => void }) {
                 <span className="file">{doc.filename}</span>
                 {doc.extract_ms != null && (
                   <span className="timing" title="Thời gian phân loại + trích xuất">
-                    ⏱ {(doc.extract_ms / 1000).toFixed(1)}s
+                    <Timer size={12} /> {(doc.extract_ms / 1000).toFixed(1)}s
                   </span>
                 )}
+                <button
+                  className="ghost small icon-only"
+                  title="Xóa chứng từ này"
+                  onClick={async () => {
+                    if (!confirm(`Xóa chứng từ "${doc.filename}"?`)) return
+                    await api.deleteDocument(doc.id)
+                    refresh()
+                  }}
+                >
+                  <Trash2 size={14} />
+                </button>
               </div>
               {doc.warnings.length > 0 && (
                 <div className="banner warn small">
@@ -511,7 +536,7 @@ function Dossier({ id, onBack }: { id: string; onBack: () => void }) {
         <div className="modal" onClick={() => setCompare(null)}>
           <div className="modal-body compare-body" onClick={(e) => e.stopPropagation()}>
             <div className="viewer-head">
-              ⚖️ So sánh nguồn — {compare.label}: "{compare.a.field.value}" ≠ "{compare.b.field.value}"
+              <Scale size={15} /> So sánh nguồn — {compare.label}: "{compare.a.field.value}" ≠ "{compare.b.field.value}"
             </div>
             <div className="compare-grid">
               {[compare.a, compare.b].map((h, i) => (
@@ -626,8 +651,8 @@ function FieldSpecsPage({ onBack }: { onBack: () => void }) {
   return (
     <>
       <div className="detail-bar">
-        <button className="ghost" onClick={onBack}>← Danh sách</button>
-        <strong>⚙️ Trường dữ liệu</strong>
+        <button className="ghost" onClick={onBack}><ArrowLeft size={15} /> Danh sách</button>
+        <strong>Trường dữ liệu</strong>
       </div>
       <p className="tagline">
         AI được phép trích thêm trường ngoài danh sách (tự đặt key snake_case) — chúng hiển thị trong bảng chứng từ.
