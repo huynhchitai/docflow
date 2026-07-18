@@ -76,4 +76,16 @@
 - Bench accuracy trích xuất: 95% field đúng (loại flake), p50 26s — metrics/ACCURACY.md.
 - Dossier mentor SHB (docs/MENTORS-SHB.md), docs/PITCH.md 7 màn, scan giả lập, cash_flow fields.
 
+### Phiên 7 — Sat 18/07 chiều (Claude Code)
+- Redesign modal so sánh: mỗi nguồn là một pane card độc lập (giá trị chip trên,
+  scan giới hạn 46vh, nút quyết định luôn hiển thị), X đóng trên header.
+- Button component theo shbfinance.com.vn (đọc CSS thật của site qua proxy render):
+  nền cam đặc chữ trắng viền cam bo 6px, hover lớp kem #FFF7E6 trượt vào từ trái —
+  hiệu ứng `buttonfx slideleft` nguyên bản; biến thể ghost/danger/card giữ nguyên nhận diện.
+- Nhập tay giá trị chuẩn khi MỌI bản trích xuất đều sai: nhấp đúp ô trong thẻ
+  Thông tin chung (áp cho toàn bộ nguồn) + hàng "Cả hai đều sai?" trong modal so sánh —
+  đều đi qua luồng hiệu chỉnh có audit log + recheck cảnh báo.
+- Rà toàn bộ đề SHB #195: mọi deliverable đã phủ; README thêm bảng đối chiếu
+  đề ↔ tính năng + lý giải chọn grounding bbox thay RAG.
+
 <!-- Thêm phiên mới theo format trên. Mỗi phiên: thời gian, việc AI làm, file liên quan. -->
