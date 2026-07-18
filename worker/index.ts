@@ -11,7 +11,8 @@ type ExtractedField = {
   value: string
   confidence: number
   page: number
-  box_2d?: [number, number, number, number] // ymin, xmin, ymax, xmax — chuẩn hóa 0–1000
+  // [ymin,xmin,ymax,xmax] hoặc nhiều box nối tiếp (bội của 4) khi giá trị vắt nhiều dòng
+  box_2d?: number[]
 }
 
 type ExtractResult = {
@@ -42,7 +43,9 @@ Phân tích tài liệu đính kèm và trả về JSON đúng schema sau, khôn
       "value": "giá trị trích xuất, giữ nguyên định dạng gốc",
       "confidence": 0.0-1.0,
       "page": số trang bắt đầu từ 1,
-      "box_2d": [ymin, xmin, ymax, xmax] // tọa độ chuẩn hóa 0-1000 trên trang đó
+      "box_2d": [ymin, xmin, ymax, xmax] // tọa độ chuẩn hóa 0-1000, ôm KHÍT phần giá trị.
+      // Nếu giá trị nằm vắt qua NHIỀU DÒNG: nối tiếp nhiều box trong cùng mảng,
+      // mỗi box ôm khít một dòng: [y1,x1,y2,x2, y1,x1,y2,x2, ...] — đừng vẽ một box to trùm cả đoạn.
     }
   ],
   "warnings": ["cảnh báo nếu thiếu chữ ký/mộc, trang mờ, số liệu bất thường..."]
@@ -168,7 +171,9 @@ app.post('/api/dossiers/:id/files', async (c) => {
       state: 'extracting',
     })
     try {
+      const t0 = Date.now()
       const ex = await extractFile(c.env, file)
+      const extractMs = Date.now() - t0
       if (ex.fields.length) {
         await insert(
           c.env,
@@ -184,13 +189,19 @@ app.post('/api/dossiers/:id/files', async (c) => {
           })),
         )
       }
-      await update(c.env, 'documents', `id=eq.${doc.id}`, {
+      const patch = {
         doc_type: ex.doc_type,
         doc_type_confidence: ex.doc_type_confidence,
         state: 'extracted',
         warnings: ex.warnings,
-      })
-      results.push({ file: file.name, doc_id: doc.id, doc_type: ex.doc_type, fields: ex.fields.length, warnings: ex.warnings })
+      }
+      try {
+        await update(c.env, 'documents', `id=eq.${doc.id}`, { ...patch, extract_ms: extractMs })
+      } catch {
+        // DB chưa chạy migration 0002 (cột extract_ms) — vẫn lưu phần còn lại
+        await update(c.env, 'documents', `id=eq.${doc.id}`, patch)
+      }
+      results.push({ file: file.name, doc_id: doc.id, doc_type: ex.doc_type, fields: ex.fields.length, extract_ms: extractMs, warnings: ex.warnings })
     } catch (e) {
       await update(c.env, 'documents', `id=eq.${doc.id}`, { state: 'failed' })
       results.push({ file: file.name, doc_id: doc.id, error: e instanceof Error ? e.message : String(e) })

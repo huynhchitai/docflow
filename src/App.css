@@ -642,3 +642,18 @@ footer {
 .profile-item.mismatch .profile-label {
   color: var(--bad);
 }
+
+/* chùm box nhiều dòng: bỏ dim toàn trang (chồng nhau sẽ che lẫn nhau), dùng viền + glow nhẹ */
+.hl-box.multi {
+  box-shadow: 0 0 0 2px rgba(245, 130, 32, 0.25);
+  background: rgba(245, 130, 32, 0.22);
+}
+
+.timing {
+  font-family: var(--mono);
+  font-size: 0.74rem;
+  color: var(--ok);
+  background: var(--ok-bg);
+  padding: 2px 8px;
+  border-radius: 6px 6px 6px var(--r-sq);
+}

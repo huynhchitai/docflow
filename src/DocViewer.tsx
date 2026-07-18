@@ -9,7 +9,8 @@ export type Highlight = {
   docId: string
   mimeType: string
   page: number
-  box: [number, number, number, number] | null // ymin,xmin,ymax,xmax /1000
+  // [ymin,xmin,ymax,xmax] hoặc nhiều box nối tiếp (bội của 4) khi giá trị vắt nhiều dòng
+  box: number[] | null
   label: string
 }
 
@@ -81,20 +82,26 @@ export function DocViewer({ hl }: { hl: Highlight }) {
     }
   }, [hl.docId, hl.page, hl.mimeType])
 
-  const box = hl.box
+  // Tách mảng thành từng box 4 số — giá trị nhiều dòng = chùm box, mỗi box một dòng
+  const boxes: number[][] = []
+  if (hl.box && size) {
+    for (let i = 0; i + 3 < hl.box.length; i += 4) boxes.push(hl.box.slice(i, i + 4))
+  }
   const overlay =
-    box && size ? (
+    size &&
+    boxes.map((b, i) => (
       <div
-        className="hl-box"
+        key={i}
+        className={`hl-box ${boxes.length > 1 ? 'multi' : ''}`}
         style={{
-          top: (box[0] / 1000) * size.h - 4,
-          left: (box[1] / 1000) * size.w - 4,
-          height: ((box[2] - box[0]) / 1000) * size.h + 8,
-          width: ((box[3] - box[1]) / 1000) * size.w + 8,
+          top: (b[0] / 1000) * size.h - 3,
+          left: (b[1] / 1000) * size.w - 3,
+          height: ((b[2] - b[0]) / 1000) * size.h + 6,
+          width: ((b[3] - b[1]) / 1000) * size.w + 6,
         }}
         title={hl.label}
       />
-    ) : null
+    ))
 
   return (
     <div className="viewer" ref={wrapRef}>

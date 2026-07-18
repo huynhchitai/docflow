@@ -298,6 +298,11 @@ function Dossier({ id, onBack }: { id: string; onBack: () => void }) {
                   {(doc.doc_type_confidence * 100).toFixed(0)}%
                 </span>
                 <span className="file">{doc.filename}</span>
+                {doc.extract_ms != null && (
+                  <span className="timing" title="Thời gian phân loại + trích xuất">
+                    ⏱ {(doc.extract_ms / 1000).toFixed(1)}s
+                  </span>
+                )}
               </div>
               {doc.warnings.length > 0 && (
                 <div className="banner warn small">

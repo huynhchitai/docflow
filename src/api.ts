@@ -6,7 +6,7 @@ export type Field = {
   value: string
   confidence: number
   page: number
-  box_2d: [number, number, number, number] | null
+  box_2d: number[] | null // 4 số hoặc bội của 4 (nhiều dòng)
   verified: boolean
   human_reviewed: boolean
 }
@@ -18,6 +18,7 @@ export type Doc = {
   doc_type: string
   doc_type_confidence: number
   state: string
+  extract_ms?: number | null
   warnings: string[]
   fields: Field[]
 }
