@@ -62,9 +62,14 @@ function MiniDemo() {
     const paper = paperRef.current
     const el = paper?.querySelector<HTMLElement>(`[data-demo="${key}"]`)
     if (!paper || !el) return
-    const p = paper.getBoundingClientRect()
-    const r = el.getBoundingClientRect()
-    setBox({ top: r.top - p.top - 3, left: r.left - p.left - 5, w: r.width + 10, h: r.height + 6 })
+    // offsetTop/offsetLeft tính theo hệ tọa độ CỤC BỘ của tấm giấy (positioned ancestor)
+    // nên không bị lệch bởi transform rotate của giấy — khác với getBoundingClientRect.
+    setBox({
+      top: el.offsetTop - 3,
+      left: el.offsetLeft - 5,
+      w: el.offsetWidth + 10,
+      h: el.offsetHeight + 6,
+    })
   }
 
   useLayoutEffect(() => {
