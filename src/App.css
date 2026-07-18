@@ -5,22 +5,24 @@
    ============================================================ */
 
 :root {
-  --navy-950: #071022;
-  --navy-900: #0a1830;
-  --navy-800: #10203f;
-  --navy-700: #182b52;
-  --line: #223458;
-  --text: #e9eef8;
-  --muted: #93a1bd;
+  /* light mode banking: navy SHB làm mực, nền sáng làm chuẩn mực, cam làm năng lượng */
+  --navy-950: #0e1f3d;   /* mực chính (Midnight Navy) */
+  --navy-900: #f7f8fb;   /* nền trang */
+  --navy-800: #ffffff;   /* card */
+  --navy-700: #eef2f9;   /* hover / inset */
+  --line: #e3e8f2;
+  --text: #0e1f3d;
+  --muted: #51617f;
   --cam: #f58220;
   --cam-bright: #ff9a3d;
   --cam-deep: #e85d04;
-  --ok: #46d68c;
-  --ok-bg: #0e3323;
-  --warn-c: #ffc94a;
-  --warn-bg: #3a3110;
-  --bad: #ff5c7a;
-  --bad-bg: #38121f;
+  --cam-text: #c25605;   /* cam đậm đạt contrast trên nền trắng */
+  --ok: #15803d;
+  --ok-bg: #e7f7ee;
+  --warn-c: #9a6a06;
+  --warn-bg: #fdf3d9;
+  --bad: #be123c;
+  --bad-bg: #fdecf0;
   /* bo góc tròn-vuông: một góc vuông chủ đích trên nền các góc tròn */
   --r: 14px;
   --r-sq: 3px;
@@ -34,8 +36,8 @@
 
 body {
   margin: 0;
-  background: var(--navy-950);
-  background-image: radial-gradient(1100px 500px at 80% -10%, rgba(245, 130, 32, 0.07), transparent 60%);
+  background: var(--navy-900);
+  background-image: radial-gradient(1100px 460px at 82% -12%, rgba(245, 130, 32, 0.06), transparent 60%);
   color: var(--text);
   font-family: var(--font);
   font-size: 15px;
@@ -87,7 +89,7 @@ header::after {
   display: inline-block;
   vertical-align: middle;
   margin-right: 14px;
-  box-shadow: 0 4px 18px rgba(245, 130, 32, 0.35);
+  box-shadow: 0 4px 14px rgba(245, 130, 32, 0.30);
 }
 
 header h1 {
@@ -100,7 +102,7 @@ header h1 {
 }
 
 header h1 span {
-  color: var(--cam);
+  color: var(--cam-text);
 }
 
 .tagline {
@@ -112,7 +114,7 @@ header h1 span {
 /* ---------- Nút ---------- */
 button {
   background: var(--cam);
-  color: var(--navy-950);
+  color: #4a2504;
   border: 0;
   border-radius: var(--r) var(--r) var(--r) var(--r-sq);
   padding: 11px 18px;
@@ -175,7 +177,7 @@ input:focus-visible,
 }
 
 .new-dossier input::placeholder {
-  color: #5f6f92;
+  color: #8c99b5;
 }
 
 .hint-center {
@@ -196,6 +198,7 @@ input:focus-visible,
   text-align: left;
   background: var(--navy-800);
   border: 1px solid var(--line);
+  box-shadow: 0 1px 3px rgba(14, 31, 61, 0.06);
   border-radius: var(--r) var(--r) var(--r) var(--r-sq);
   padding: 18px;
   color: var(--text);
@@ -230,11 +233,11 @@ input:focus-visible,
   letter-spacing: 0.5px;
 }
 
-.state-uploading { background: var(--navy-700); color: #9ab4e8; }
+.state-uploading { background: #e8eefb; color: #33518f; }
 .state-extracting { background: var(--warn-bg); color: var(--warn-c); }
 .state-needs_review { background: var(--bad-bg); color: var(--bad); }
 .state-done { background: var(--ok-bg); color: var(--ok); }
-.state-exported { background: #0f2c4a; color: #64c7ff; }
+.state-exported { background: #e3f2fd; color: #0b5394; }
 .alert-chip { background: var(--bad-bg); color: var(--bad); }
 
 /* ---------- Thanh chi tiết ---------- */
@@ -265,19 +268,22 @@ input:focus-visible,
 
 .banner.error {
   background: var(--bad-bg);
-  border: 1px solid #7f2740;
+  border: 1px solid #f1b4c4;
+  color: var(--bad);
 }
 
 .banner.warn {
   background: var(--warn-bg);
-  border: 1px solid #7a651f;
+  border: 1px solid #ecd9a0;
+  color: var(--warn-c);
 }
 
 .banner.critical {
   background: var(--bad-bg);
   border: 1px solid var(--bad);
+  color: var(--bad);
   font-weight: 600;
-  box-shadow: 0 0 24px rgba(255, 92, 122, 0.15);
+  box-shadow: 0 1px 4px rgba(190, 18, 60, 0.12);
 }
 
 .banner.small {
@@ -347,6 +353,7 @@ input:focus-visible,
 .doc-card {
   background: var(--navy-800);
   border: 1px solid var(--line);
+  box-shadow: 0 1px 3px rgba(14, 31, 61, 0.06);
   border-radius: var(--r) var(--r) var(--r) var(--r-sq);
   padding: 14px 16px;
   margin-bottom: 14px;
@@ -404,7 +411,7 @@ tr:last-child td {
 }
 
 .row-active td {
-  background: #21386b !important;
+  background: #ffe9d3 !important;
 }
 
 td.value {
@@ -415,7 +422,8 @@ td.value {
 
 td.value input {
   width: 100%;
-  background: var(--navy-950);
+  background: #fff7ef;
+  color: var(--text);
   border: 1px solid var(--cam);
   color: var(--text);
   border-radius: 6px;
@@ -459,8 +467,8 @@ td.src {
 .viewer-head {
   padding: 10px 14px;
   font-size: 0.84rem;
-  color: var(--cam-bright);
-  background: var(--navy-700);
+  color: #ffffff;
+  background: var(--navy-950);
   font-weight: 600;
 }
 
@@ -468,7 +476,7 @@ td.src {
   position: relative;
   overflow: auto;
   max-height: 78vh;
-  background: #fff;
+  background: #e6ebf4;
 }
 
 .viewer-stage img,
@@ -482,7 +490,7 @@ td.src {
   border: 3px solid var(--cam);
   border-radius: 8px 8px 8px var(--r-sq);
   background: rgba(245, 130, 32, 0.16);
-  box-shadow: 0 0 0 4000px rgba(7, 16, 34, 0.42);
+  box-shadow: 0 0 0 4000px rgba(14, 31, 61, 0.30);
   pointer-events: none;
   transition: all 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
 }
@@ -500,7 +508,7 @@ td.src {
 .modal {
   position: fixed;
   inset: 0;
-  background: rgba(4, 10, 24, 0.78);
+  background: rgba(14, 31, 61, 0.45);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -524,7 +532,8 @@ td.src {
   padding: 16px;
   font-size: 0.76rem;
   overflow: auto;
-  color: #b9e8a0;
+  color: #0b5e2e;
+  background: #f6fbf6;
   font-family: var(--mono);
 }
 
@@ -534,7 +543,7 @@ td.src {
 
 footer {
   margin-top: 52px;
-  color: #55648a;
+  color: #7c89a6;
   font-size: 0.78rem;
   text-align: center;
 }
