@@ -1,6 +1,6 @@
 # DocFlow
 
-**Hồ sơ tín dụng: từ scan đến core-banking trong vài phút — trích xuất có truy vết nguồn, không bịa số liệu.**
+**Hồ sơ tín dụng: từ scan đến core-banking trong vài phút — trích xuất có truy vết nguồn, mọi số liệu đều có nguồn kiểm chứng.**
 
 Bài dự thi Vietnam AI Innovation Challenge 2026 · Đề SHB #195 — Intelligent Document Processing · Track Tài chính/Ngân hàng · Team **OCanbubu**
 
@@ -23,7 +23,7 @@ Cán bộ tín dụng nhận một bộ hồ sơ vay gồm nhiều chứng từ 
 6. **Bấm Export core-banking** — payload nói đúng ngôn ngữ hệ thống SHB: khối **CIF** (Customer Information File), cash-flow, metadata tích hợp nhắm core **Intellect (SOA/ESB)** qua adapter — không đụng core
 7. **Nghiệp vụ tự cấu hình trường mới** ngay trên UI (⚙️ Trường dữ liệu) — thêm "Mã số thuế" trong 10 giây, có hiệu lực tức thì với prompt AI, không cần deploy
 
-Nguyên tắc thiết kế: **không bịa**. Trường nào AI không đọc được thì bỏ trống + cảnh báo, không đoán. Trường nào tin cậy thấp thì đánh vàng/đỏ chờ người duyệt.
+Nguyên tắc thiết kế: **không suy diễn**. Trường nào AI không đọc được thì bỏ trống + cảnh báo, không đoán. Trường nào tin cậy thấp thì đánh vàng/đỏ chờ người duyệt.
 
 ## Số liệu đo thật (không phải ước lượng)
 
@@ -95,7 +95,7 @@ Mở [demo](https://docflow.huynhchitai.com), nhập mã truy cập, bấm **Và
 
 Click bất kỳ trường nào (trong thẻ khách hàng hoặc bảng). Bản scan gốc mở ở cột phải, **khoanh cam đúng vị trí con số đó**, phần còn lại mờ đi. Giá trị nằm vắt nhiều dòng thì khoanh từng dòng.
 
-### Khi hai chứng từ cãi nhau
+### Đối chiếu khi chứng từ mâu thuẫn
 
 Ô nào trong thẻ khách hàng viền đỏ **⚠️ LỆCH** — click vào là hai bản scan gốc mở **cạnh nhau**, mỗi bên khoanh cam đúng chỗ giá trị mâu thuẫn. Đây là màn đối chất trực quan cho cán bộ kiểm soát rủi ro.
 

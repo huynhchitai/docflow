@@ -930,3 +930,10 @@ button.danger:hover { border-color: var(--bad); color: var(--bad); }
 }
 .setup-code button { position: absolute; top: 8px; right: 8px; background: rgba(255,255,255,0.08); color: #cdd9f0; border-color: #2a3b5e; }
 .setup-code button:hover { color: #fff; border-color: var(--cam); }
+
+.alert-row { display: flex; align-items: center; gap: 8px; }
+.reviewed-ico { color: var(--cam-text); vertical-align: -1px; }
+.banner { display: flex; align-items: flex-start; gap: 8px; flex-direction: column; }
+.banner.error, .banner.warn { flex-direction: row; align-items: center; }
+.card-customer { display: inline-flex; align-items: center; gap: 5px; }
+.dossier-sub { display: flex; align-items: center; gap: 6px; }

@@ -109,7 +109,7 @@ export function DocViewer({ hl }: { hl: Highlight }) {
       <div className="viewer-head">
         <Search size={14} /> {hl.label} · trang {hl.page}
       </div>
-      {error && <div className="banner error">⚠️ {error}</div>}
+      {error && <div className="banner error">{error}</div>}
       <div className="viewer-stage">
         {imgUrl ? <img src={imgUrl} alt="" onLoad={(e) => setSize({ w: e.currentTarget.clientWidth, h: e.currentTarget.clientHeight })} /> : <canvas ref={canvasRef} />}
         {overlay}

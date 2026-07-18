@@ -16,8 +16,8 @@ import { CANONICAL_FIELDS, normalize } from '../shared/fields'
 import { Guide } from './Guide'
 import { ACCESS_KEY } from './api'
 import {
-  ArrowLeft, BookOpen, Check, Copy, Flame, FolderPlus, Landmark, Pencil,
-  Scale, Settings2, Timer, Trash2, User as UserIcon,
+  AlertTriangle, ArrowLeft, BookOpen, Check, Copy, Flame, FolderPlus, Landmark, OctagonAlert,
+  Pencil, Scale, Settings2, Timer, Trash2, User as UserIcon,
 } from 'lucide-react'
 
 function confidenceClass(c: number) {
@@ -115,7 +115,7 @@ function CustomerProfile({
       <div className="profile-head">
         <span className="profile-avatar" aria-hidden="true"><UserIcon size={16} /></span>
         <strong>Thông tin chung khách hàng</strong>
-        <span className="profile-note">tổng hợp từ {docs.length} chứng từ — click để soi nguồn</span>
+        <span className="profile-note">tổng hợp từ {docs.length} chứng từ — chọn một trường để xem nguồn trích xuất</span>
       </div>
       <div className="profile-grid">
         {entries.map((e) => (
@@ -133,11 +133,11 @@ function CustomerProfile({
                     label: e.label,
                   })
             }
-            title={e.consistent ? `Khớp trên ${e.sources} chứng từ` : 'LỆCH — click để so sánh 2 bản gốc cạnh nhau'}
+            title={e.consistent ? `Trùng khớp trên ${e.sources} chứng từ` : 'Sai lệch giữa các chứng từ — chọn để đối chiếu hai bản gốc'}
           >
             <span className="profile-label">
               {e.label}
-              {e.sources > 1 && (e.consistent ? ` ✓×${e.sources}` : ' ⚠️ LỆCH')}
+              {e.sources > 1 && (e.consistent ? ` ✓ ${e.sources} nguồn` : ' · SAI LỆCH')}
             </span>
             <span className="profile-value">{e.value}</span>
           </button>
@@ -155,8 +155,8 @@ function Header() {
         Doc<span>Flow</span>
       </h1>
       <p className="tagline">
-        Hồ sơ tín dụng: từ scan đến core-banking trong vài phút — trích xuất có truy vết nguồn,
-        không bịa số liệu.
+        Hồ sơ tín dụng: từ bản scan đến core-banking trong vài phút — mọi trường dữ liệu
+        đều truy vết được về nguồn.
       </p>
     </header>
   )
@@ -269,22 +269,22 @@ function DossierList({ onOpen, onFields, onGuide }: { onOpen: (id: string) => vo
         <button className="ghost" onClick={onFields}><Settings2 size={15} /> Trường dữ liệu</button>
       </div>
 
-      {error && <div className="banner error">⚠️ {error}</div>}
+      {error && <div className="banner error"><AlertTriangle size={14} /> {error}</div>}
       {rows === null ? (
         <p className="hint-center">Đang tải…</p>
       ) : rows.length === 0 ? (
-        <p className="hint-center">Chưa có bộ hồ sơ nào — bấm "+ Tạo bộ hồ sơ" để bắt đầu.</p>
+        <p className="hint-center">Chưa có bộ hồ sơ. Chọn "Tạo bộ hồ sơ" để bắt đầu.</p>
       ) : (
         <div className="dossier-grid">
           {rows.map((d) => (
             <button key={d.id} className="dossier-card" onClick={() => onOpen(d.id)}>
               <strong>{d.name}</strong>
-              {d.customer_name && <div className="card-customer">👤 {d.customer_name}</div>}
+              {d.customer_name && <div className="card-customer"><UserIcon size={12} /> {d.customer_name}</div>}
               <div className="card-meta">
                 <span className={`chip state-${d.state}`}>{STATE_LABELS[d.state] ?? d.state}</span>
                 <span>{d.documents[0]?.count ?? 0} chứng từ</span>
                 {(d.crosscheck_alerts[0]?.count ?? 0) > 0 && (
-                  <span className="chip alert-chip">🚨 {d.crosscheck_alerts[0].count} cảnh báo</span>
+                  <span className="chip alert-chip"><AlertTriangle size={11} /> {d.crosscheck_alerts[0].count} cảnh báo</span>
                 )}
               </div>
             </button>
@@ -383,18 +383,18 @@ function Dossier({ id, onBack }: { id: string; onBack: () => void }) {
 
       {(d.customer_name || d.note) && (
         <p className="dossier-sub">
-          {d.customer_name && <>👤 <b>{d.customer_name}</b></>}
+          {d.customer_name && <><UserIcon size={13} /> <b>{d.customer_name}</b></>}
           {d.note && <span className="note"> · {d.note}</span>}
         </p>
       )}
 
-      {error && <div className="banner error">⚠️ {error}</div>}
+      {error && <div className="banner error"><AlertTriangle size={14} /> {error}</div>}
 
       {d.crosscheck_alerts.length > 0 && (
         <div className="banner critical">
           {d.crosscheck_alerts.map((a) => (
-            <div key={a.id}>
-              {a.severity === 'critical' ? '🚨' : '⚠️'} <b>{a.severity.toUpperCase()}</b> — {a.detail}
+            <div key={a.id} className="alert-row">
+              <OctagonAlert size={15} /> <b>{a.severity === 'critical' ? 'TRỌNG YẾU' : 'LƯU Ý'}</b> — {a.detail}
             </div>
           ))}
         </div>
@@ -417,7 +417,7 @@ function Dossier({ id, onBack }: { id: string; onBack: () => void }) {
           hidden
           onChange={(e) => upload([...(e.target.files ?? [])])}
         />
-        {busy ? '⏳ Đang trích xuất — Gemini đang đọc từng trang…' : '📄 Thả thêm chứng từ vào đây (PDF/ảnh, chọn được nhiều file)'}
+        {busy ? 'Đang phân loại và trích xuất dữ liệu…' : 'Thả thêm chứng từ tại đây (PDF hoặc ảnh, chọn được nhiều tệp)'}
       </section>
 
       <CustomerProfile docs={d.documents} onPick={setHl} onCompare={(label, x, y) => setCompare({ label, a: x, b: y })} />
@@ -491,9 +491,9 @@ function Dossier({ id, onBack }: { id: string; onBack: () => void }) {
                               e.stopPropagation()
                               setEditing({ id: f.id, value: f.value })
                             }}
-                            title="Double-click để sửa (human review)"
+                            title="Nhấp đúp để hiệu chỉnh (mọi thay đổi được ghi nhật ký)"
                           >
-                            {f.value} {f.human_reviewed && '✏️'}
+                            {f.value} {f.human_reviewed && <Pencil size={11} className="reviewed-ico" />}
                           </span>
                         )}
                       </td>
@@ -573,7 +573,7 @@ function Dossier({ id, onBack }: { id: string; onBack: () => void }) {
       {exported && (
         <div className="modal" onClick={() => setExported(null)}>
           <div className="modal-body" onClick={(e) => e.stopPropagation()}>
-            <div className="viewer-head">🏦 Payload gửi core-banking (schema shb.core-banking.loan-intake.v1)</div>
+            <div className="viewer-head"><Landmark size={14} /> Payload chuyển core-banking · schema shb.core-banking.loan-intake.v1</div>
             <pre>{JSON.stringify(exported, null, 2)}</pre>
             <div className="modal-actions">
               <button
@@ -619,7 +619,7 @@ function AccessGate({ onDone, onGuide }: { onDone: () => void; onGuide: () => vo
       <h1>
         Doc<span>Flow</span>
       </h1>
-      <p className="tagline">Khu vực nghiệp vụ — nhập mã truy cập được cấp để tiếp tục.</p>
+      <p className="tagline">Khu vực nghiệp vụ. Nhập mã truy cập được cấp để tiếp tục.</p>
       <form className="gate-form" onSubmit={submit}>
         <input
           type="password"
@@ -632,7 +632,7 @@ function AccessGate({ onDone, onGuide }: { onDone: () => void; onGuide: () => vo
           {checking ? 'Đang kiểm tra…' : 'Vào hệ thống'}
         </button>
       </form>
-      {bad && <div className="banner error">⚠️ Mã không đúng — thử lại hoặc liên hệ team OCanbubu.</div>}
+      {bad && <div className="banner error"><AlertTriangle size={14} /> Mã truy cập không đúng. Vui lòng thử lại hoặc liên hệ đội OCanbubu.</div>}
       <button className="ghost gate-guide" onClick={onGuide}><BookOpen size={15} /> Xem hướng dẫn sử dụng (không cần mã)</button>
     </div>
   )
@@ -680,7 +680,7 @@ function FieldSpecsPage({ onBack }: { onBack: () => void }) {
         Nhưng chỉ trường khai báo ở đây mới được <b>tổng hợp lên thẻ khách hàng</b> và <b>đối chiếu chéo</b>.
         Thêm trường mới có hiệu lực ngay với chứng từ upload sau đó — không cần deploy.
       </p>
-      {error && <div className="banner error">⚠️ {error}</div>}
+      {error && <div className="banner error"><AlertTriangle size={14} /> {error}</div>}
 
       <form className="spec-form" onSubmit={add}>
         <input value={form.label} placeholder="Nhãn — vd: Mã số thuế" onChange={(e) => setForm({ ...form, label: e.target.value })} />

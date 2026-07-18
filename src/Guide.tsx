@@ -17,31 +17,31 @@ const STEPS = [
     icon: Flame,
     title: '2 · PyTorch phân loại → Gemini trích xuất',
     body: 'Bộ phân loại PyTorch (ResNet18 fine-tune) nhận diện loại chứng từ trong ~0,2 giây, định tuyến schema rồi Gemini trên Vertex AI trích từng trường kèm độ tin cậy và tọa độ nguồn. Trung bình 26 giây/chứng từ, dưới 500đ/bộ.',
-    tip: 'Chip 🔥 PyTorch và đồng hồ ⏱ trên mỗi chứng từ là số đo thật, không phải trang trí.',
+    tip: 'Chip PyTorch và số đo thời gian trên mỗi chứng từ đều là số đo thực tế, không phải trang trí.',
   },
   {
     icon: ScanSearch,
     title: '3 · Click một trường — soi đúng nguồn',
     body: 'Click bất kỳ trường nào, bản scan gốc mở đúng trang và khoanh cam đúng vị trí con số đó — giá trị vắt nhiều dòng thì khoanh từng dòng. AI không được phép nói mà không chỉ tay.',
-    tip: 'Thử ở mini-demo bên dưới 👇',
+    tip: 'Trải nghiệm ngay ở phần mô phỏng bên dưới.',
   },
   {
     icon: ShieldAlert,
     title: '4 · Hệ thống tự bắt mâu thuẫn',
-    body: 'CCCD, số tiền, kỳ hạn… lệch nhau giữa các chứng từ là banner đỏ CRITICAL. Click ô ⚠️ LỆCH trong thẻ khách hàng — hai bản gốc mở cạnh nhau để đối chất.',
+    body: 'Số CCCD, số tiền, kỳ hạn sai lệch giữa các chứng từ sẽ tạo cảnh báo trọng yếu. Chọn ô SAI LỆCH trong thẻ khách hàng — hai bản gốc mở cạnh nhau để đối chiếu.',
     tip: 'Đối chiếu chạy bằng rule thuần theo từ điển trường chuẩn — deterministic, giải thích được từng cảnh báo.',
   },
   {
     icon: PencilLine,
     title: '5 · Người duyệt, máy ghi vết',
-    body: 'Double-click để sửa giá trị sai — trường đã sửa hiện ✏️, mọi thay đổi vào audit log (ai, lúc nào, cũ → mới). Trường tin cậy thấp tự đánh vàng/đỏ chờ duyệt.',
+    body: 'Nhấp đúp để hiệu chỉnh giá trị — mọi thay đổi được ghi nhật ký kiểm toán (người sửa, thời điểm, giá trị cũ và mới). Trường có độ tin cậy thấp được đánh dấu chờ phê duyệt.',
     tip: 'Triết lý: AI đọc — code đối chiếu — người quyết định.',
   },
   {
     icon: Landmark,
     title: '6 · Export core-banking',
     body: 'Một nút — nhận payload JSON chuẩn CIF (Customer Information File) kèm cash-flow, nhắm core Intellect của SHB qua adapter. Không đụng core.',
-    tip: 'Có cả nhóm trường tự cấu hình (⚙️) — nghiệp vụ thêm "Mã số thuế" trong 10 giây, không cần deploy.',
+    tip: 'Bộ phận nghiệp vụ tự cấu hình trường mới trong mục Trường dữ liệu — không phụ thuộc đội phát triển.',
   },
 ]
 
@@ -82,7 +82,7 @@ function MiniDemo() {
   return (
     <div className="minidemo">
       <div className="minidemo-fields">
-        <p className="minidemo-hint">Click một trường — khung cam nhảy đúng chỗ trên "bản scan":</p>
+        <p className="minidemo-hint">Chọn một trường — khung đánh dấu di chuyển đến đúng vị trí trên bản scan:</p>
         {DEMO_FIELDS.map((d, i) => (
           <button
             key={d.key}
@@ -187,7 +187,7 @@ export function Guide({ onBack }: { onBack: () => void }) {
         <div className="guide-stat"><span className="stat-n">95%</span><span className="stat-l">field trích đúng</span></div>
         <div className="guide-stat"><span className="stat-n">26s</span><span className="stat-l">median / chứng từ</span></div>
         <div className="guide-stat"><span className="stat-n">&lt;500đ</span><span className="stat-l">chi phí AI / bộ hồ sơ</span></div>
-        <div className="guide-stat"><span className="stat-n">0</span><span className="stat-l">số liệu bịa — mọi trường có nguồn</span></div>
+        <div className="guide-stat"><span className="stat-n">0</span><span className="stat-l">số liệu không nguồn gốc</span></div>
       </div>
 
       <div className="guide-steps" role="tablist" aria-label="Các bước sử dụng">
@@ -210,7 +210,7 @@ export function Guide({ onBack }: { onBack: () => void }) {
       <div className="guide-detail">
         <h3><Icon size={18} /> {S.title}</h3>
         <p>{S.body}</p>
-        <p className="guide-tip">💡 {S.tip}</p>
+        <p className="guide-tip"><b>Lưu ý:</b> {S.tip}</p>
         <div className="guide-nav">
           <button className="ghost" disabled={step === 0} onClick={() => setStep(step - 1)}>← Trước</button>
           <span className="src">{step + 1} / {STEPS.length}</span>
@@ -224,11 +224,11 @@ export function Guide({ onBack }: { onBack: () => void }) {
       <h3 className="guide-h3"><Settings2 size={17} /> Câu hỏi nhanh</h3>
       <div className="guide-faq">
         <details>
-          <summary>Sản phẩm có bịa số liệu không?</summary>
-          <p>Không — theo thiết kế. Trường AI không đọc được sẽ bỏ trống + cảnh báo, không đoán. Mọi giá trị đều kèm tọa độ nguồn trên bản gốc và độ tin cậy; tin cậy thấp phải qua người duyệt.</p>
+          <summary>Hệ thống có tự suy diễn số liệu không?</summary>
+          <p>Không — theo thiết kế. Trường không đọc được sẽ bỏ trống kèm cảnh báo, không suy đoán. Mọi giá trị đều có tọa độ nguồn trên bản gốc và độ tin cậy; độ tin cậy thấp bắt buộc qua người phê duyệt.</p>
         </details>
         <details>
-          <summary>Cảnh báo lệch hoạt động thế nào?</summary>
+          <summary>Cơ chế cảnh báo sai lệch hoạt động thế nào?</summary>
           <p>Rule thuần TypeScript đối chiếu theo từ điển trường chuẩn (CCCD chỉ giữ chữ số, tên bỏ dấu + Đ→D…). Không dùng model để phán — bộ phận bắt sai lệch mà cũng dùng AI thì chính nó có thể sai lệch.</p>
         </details>
         <details>
@@ -240,8 +240,8 @@ export function Guide({ onBack }: { onBack: () => void }) {
           <p>Payload JSON chuẩn CIF, versioned, bắn qua adapter/ESB đứng trước core (SHB chạy Intellect từ 2010). Nguyên tắc tích hợp hệ thống cũ: không bao giờ đụng core.</p>
         </details>
         <details>
-          <summary>Dữ liệu demo có thật không?</summary>
-          <p>Toàn bộ hư cấu, có watermark "TÀI LIỆU MẪU", cài sẵn lỗi lệch CCCD/số tiền/kỳ hạn để trình diễn cảnh báo. Không có PII thật nào trong hệ thống.</p>
+          <summary>Dữ liệu trình diễn có phải dữ liệu thật không?</summary>
+          <p>Toàn bộ hư cấu, có watermark "TÀI LIỆU MẪU", được cài sẵn sai lệch CCCD/số tiền/kỳ hạn để trình diễn cơ chế cảnh báo. Không có dữ liệu cá nhân thật trong hệ thống.</p>
         </details>
       </div>
 
@@ -249,7 +249,7 @@ export function Guide({ onBack }: { onBack: () => void }) {
       <SetupSection />
 
       <div className="guide-cta">
-        <button onClick={onBack}>Vào dùng thật →</button>
+        <button onClick={onBack}>Bắt đầu sử dụng</button>
       </div>
     </>
   )
