@@ -138,7 +138,7 @@ async function extractFile(env: Env, file: File): Promise<ExtractResult> {
   }
   const dataB64 = await fileToB64(file)
   let parsed: Partial<ExtractResult> = {}
-  for (let attempt = 0; attempt < 2; attempt++) {
+  for (let attempt = 0; attempt < 3; attempt++) {
     const text = await generateContent(env, {
       model: 'gemini-3-flash-preview',
       mimeType: file.type || 'application/pdf',
@@ -150,7 +150,8 @@ async function extractFile(env: Env, file: File): Promise<ExtractResult> {
     } catch {
       parsed = {}
     }
-    if (parsed.fields?.length) break // Gemini thỉnh thoảng trả rỗng — thử lại 1 lần
+    if (parsed.fields?.length) break // Gemini thỉnh thoảng trả rỗng — thử tối đa 3 lần
+    await new Promise((r) => setTimeout(r, 800 * (attempt + 1)))
   }
   return {
     mode: 'gemini',
@@ -384,6 +385,13 @@ app.post('/api/dossiers/:id/export', async (c) => {
     exported_at: new Date().toISOString(),
     customer: { full_name: pick('customer_name'), national_id: pick('national_id') },
     loan: { amount: pick('loan_amount'), term: pick('loan_term'), interest_rate: pick('interest_rate'), collateral: pick('collateral') },
+    cash_flow: {
+      revenue: pick('revenue'),
+      net_profit: pick('net_profit'),
+      declared_income: pick('income'),
+      repayment_source: pick('repayment_source'),
+      monthly_repayment: pick('monthly_repayment'),
+    },
     documents: d.documents.map((doc) => ({ type: doc.doc_type, filename: doc.filename, field_count: doc.fields.length })),
     review: {
       unresolved_critical_alerts: d.crosscheck_alerts.filter((a) => a.severity === 'critical').length,

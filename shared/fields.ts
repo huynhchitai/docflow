@@ -31,6 +31,11 @@ export const CANONICAL_FIELDS: CanonicalField[] = [
   { key: 'loan_term', label: 'Kỳ hạn', aliases: /loan_term|ky_han|term/i, norm: 'digits', crosscheck: true, profile: false },
   { key: 'interest_rate', label: 'Lãi suất', aliases: /interest_rate|lai_suat/i, norm: 'digits', crosscheck: true, profile: false },
   { key: 'collateral', label: 'Tài sản bảo đảm', aliases: /collateral|tai_san/i, norm: 'text_loose', crosscheck: false, profile: false },
+  // Nhóm dòng tiền (đề SHB yêu cầu "cash flow data" — nguồn: BCTC, phương án trả nợ)
+  { key: 'revenue', label: 'Doanh thu', aliases: /revenue|doanh_thu/i, norm: 'digits', crosscheck: false, profile: false },
+  { key: 'net_profit', label: 'Lợi nhuận sau thuế', aliases: /net_profit|profit|loi_nhuan/i, norm: 'digits', crosscheck: false, profile: false },
+  { key: 'repayment_source', label: 'Nguồn trả nợ', aliases: /repayment|nguon_tra_no|phuong_an_tra/i, norm: 'text_loose', crosscheck: false, profile: false },
+  { key: 'monthly_repayment', label: 'Nghĩa vụ trả nợ/tháng', aliases: /monthly_repayment|tra_no_thang/i, norm: 'digits', crosscheck: false, profile: false },
 ]
 
 export function normalize(kind: NormKind, s: string): string {
