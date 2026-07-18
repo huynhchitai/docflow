@@ -128,6 +128,8 @@ export const api = {
       headers: { 'Content-Type': 'application/json', ...accessHeaders() },
       body: JSON.stringify({ value }),
     }).then((r) => j<Field>(r)),
+  recheckDossier: (id: string) =>
+    fetch(`/api/dossiers/${id}/recheck`, { method: 'POST', headers: accessHeaders() }).then((r) => j<object>(r)),
   exportDossier: (id: string) =>
     fetch(`/api/dossiers/${id}/export`, { method: 'POST', headers: accessHeaders() }).then((r) => j<object>(r)),
   deleteDossier: (id: string) =>

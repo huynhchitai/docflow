@@ -1015,3 +1015,14 @@ button.danger:hover { border-color: var(--bad); color: var(--bad); }
 @media (prefers-reduced-motion: reduce) {
   .progress-fill { animation: none; }
 }
+
+.resolve-btn {
+  width: 100%;
+  margin-bottom: 8px;
+  justify-content: center;
+  background: var(--ok-bg);
+  color: var(--ok);
+  border: 1px solid #9adfba;
+  font-weight: 700;
+}
+.resolve-btn:hover { background: #d9f3e4; }

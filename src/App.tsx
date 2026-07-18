@@ -315,6 +315,7 @@ function Dossier({ id, onBack }: { id: string; onBack: () => void }) {
   const [exported, setExported] = useState<object | null>(null)
   const [copied, setCopied] = useState(false)
   const [compare, setCompare] = useState<{ label: string; a: Hit; b: Hit } | null>(null)
+  const [resolving, setResolving] = useState(false)
   const [showEdit, setShowEdit] = useState(false)
   const [savingEdit, setSavingEdit] = useState(false)
   const [prog, setProg] = useState<{ total: number; done: number } | null>(null)
@@ -583,23 +584,46 @@ function Dossier({ id, onBack }: { id: string; onBack: () => void }) {
               <Scale size={15} /> So sánh nguồn — {compare.label}: "{compare.a.field.value}" ≠ "{compare.b.field.value}"
             </div>
             <div className="compare-grid">
-              {[compare.a, compare.b].map((h, i) => (
-                <div key={i} className="compare-pane">
-                  <div className="compare-label">
-                    <span className="file">{h.doc.filename}</span>
-                    <span className="compare-value">{h.field.value}</span>
+              {[compare.a, compare.b].map((h, i) => {
+                const other = i === 0 ? compare.b : compare.a
+                return (
+                  <div key={i} className="compare-pane">
+                    <div className="compare-label">
+                      <span className="file">{h.doc.filename}</span>
+                      <span className="compare-value">{h.field.value}</span>
+                    </div>
+                    <button
+                      className="resolve-btn"
+                      disabled={resolving}
+                      title="Lấy giá trị này làm chuẩn — bản còn lại được hiệu chỉnh theo, có ghi nhật ký"
+                      onClick={async () => {
+                        setResolving(true)
+                        try {
+                          await api.editField(other.field.id, h.field.value)
+                          await api.recheckDossier(id)
+                          setCompare(null)
+                          refresh()
+                        } catch (e) {
+                          setError(String(e))
+                        } finally {
+                          setResolving(false)
+                        }
+                      }}
+                    >
+                      {resolving ? 'Đang hiệu chỉnh…' : <><Check size={15} /> Dùng giá trị này làm chuẩn</>}
+                    </button>
+                    <DocViewer
+                      hl={{
+                        docId: h.doc.id,
+                        mimeType: h.doc.mime_type,
+                        page: h.field.page,
+                        box: h.field.box_2d,
+                        label: compare.label,
+                      }}
+                    />
                   </div>
-                  <DocViewer
-                    hl={{
-                      docId: h.doc.id,
-                      mimeType: h.doc.mime_type,
-                      page: h.field.page,
-                      box: h.field.box_2d,
-                      label: compare.label,
-                    }}
-                  />
-                </div>
-              ))}
+                )
+              })}
             </div>
             <button onClick={() => setCompare(null)}>Đóng</button>
           </div>
