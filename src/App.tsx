@@ -317,6 +317,8 @@ function Dossier({ id, onBack }: { id: string; onBack: () => void }) {
   const [compare, setCompare] = useState<{ label: string; a: Hit; b: Hit } | null>(null)
   const [showEdit, setShowEdit] = useState(false)
   const [savingEdit, setSavingEdit] = useState(false)
+  const [prog, setProg] = useState<{ total: number; done: number } | null>(null)
+  const [tick, setTick] = useState(0)
   const inputRef = useRef<HTMLInputElement>(null)
 
   const refresh = useCallback(() => {
@@ -324,18 +326,35 @@ function Dossier({ id, onBack }: { id: string; onBack: () => void }) {
   }, [id])
   useEffect(refresh, [refresh])
 
+  useEffect(() => {
+    if (!prog) return
+    const t = setInterval(() => setTick((x) => x + 1), 1000)
+    return () => clearInterval(t)
+  }, [prog])
+
   const upload = async (files: File[]) => {
-    if (!files.length) return
+    if (!files.length || busy) return
     setBusy(true)
     setError(null)
-    try {
-      await api.uploadFiles(id, files)
-      refresh()
-    } catch (e) {
-      setError(String(e))
-    } finally {
-      setBusy(false)
+    setTick(0)
+    setProg({ total: files.length, done: 0 })
+    // Mỗi file một request song song: có tiến độ thật, file xong hiện ngay không chờ cả bộ
+    const results = await Promise.allSettled(
+      files.map((f) =>
+        api.uploadFiles(id, [f]).then((r) => {
+          setProg((p) => (p ? { ...p, done: p.done + 1 } : p))
+          refresh()
+          return r
+        }),
+      ),
+    )
+    const failed = results.filter((r) => r.status === 'rejected')
+    if (failed.length) {
+      setError(`${failed.length}/${files.length} chứng từ xử lý lỗi — thử tải lại tệp đó.`)
     }
+    setBusy(false)
+    setProg(null)
+    refresh()
   }
 
   const saveEdit = async () => {
@@ -417,7 +436,24 @@ function Dossier({ id, onBack }: { id: string; onBack: () => void }) {
           hidden
           onChange={(e) => upload([...(e.target.files ?? [])])}
         />
-        {busy ? 'Đang phân loại và trích xuất dữ liệu…' : 'Thả thêm chứng từ tại đây (PDF hoặc ảnh, chọn được nhiều tệp)'}
+        {busy && prog ? (
+          <div className="upload-progress">
+            <div className="progress-info">
+              <span>
+                Đang xử lý <b>{prog.done}/{prog.total}</b> chứng từ · {tick}s
+              </span>
+              <span className="progress-note">Chứng từ hoàn tất hiển thị ngay bên dưới — không cần chờ cả bộ</span>
+            </div>
+            <div className="progress-track">
+              <div
+                className="progress-fill"
+                style={{ width: `${Math.max(8, (prog.done / prog.total) * 100)}%` }}
+              />
+            </div>
+          </div>
+        ) : (
+          'Thả thêm chứng từ tại đây (PDF hoặc ảnh, chọn được nhiều tệp)'
+        )}
       </section>
 
       <CustomerProfile docs={d.documents} onPick={setHl} onCompare={(label, x, y) => setCompare({ label, a: x, b: y })} />

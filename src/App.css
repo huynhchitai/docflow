@@ -984,3 +984,34 @@ button.danger:hover { border-color: var(--bad); color: var(--bad); }
 .landing-login-sub { color: var(--muted); font-size: 0.9rem; margin: 0 0 16px; }
 .landing-login .gate-form { display: flex; flex-direction: column; gap: 10px; }
 .landing-login .gate-guide { margin-top: 14px; width: 100%; justify-content: center; }
+
+/* ---------- Thanh tiến độ xử lý ---------- */
+.dropzone.busy { opacity: 1; }
+
+.upload-progress { width: 100%; max-width: 560px; margin: 0 auto; text-align: left; }
+
+.progress-info {
+  display: flex; justify-content: space-between; align-items: baseline; gap: 12px;
+  flex-wrap: wrap; margin-bottom: 8px; font-size: 0.9rem; color: var(--text);
+}
+.progress-info b { font-family: var(--mono); }
+.progress-note { color: var(--muted); font-size: 0.78rem; }
+
+.progress-track {
+  height: 8px; background: var(--navy-700); border-radius: 999px; overflow: hidden;
+}
+.progress-fill {
+  height: 100%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, var(--cam-deep), var(--cam), var(--cam-bright), var(--cam));
+  background-size: 200% 100%;
+  animation: progress-shimmer 1.6s linear infinite;
+  transition: width 0.5s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+@keyframes progress-shimmer {
+  0% { background-position: 0% 0; }
+  100% { background-position: -200% 0; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .progress-fill { animation: none; }
+}
