@@ -194,6 +194,7 @@ export function Guide({ onBack }: { onBack: () => void }) {
         <strong>Hướng dẫn sử dụng</strong>
       </div>
 
+      <div className="guide-wrap">
       <HeroStats />
 
       <div className="guide-steps" role="tablist" aria-label="Các bước sử dụng">
@@ -256,6 +257,7 @@ export function Guide({ onBack }: { onBack: () => void }) {
 
       <div className="guide-cta">
         <button onClick={onBack}>Bắt đầu sử dụng</button>
+      </div>
       </div>
     </>
   )

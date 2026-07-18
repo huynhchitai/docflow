@@ -1032,3 +1032,65 @@ button.danger:hover { border-color: var(--bad); color: var(--bad); }
   font-weight: 700;
 }
 .resolve-btn:hover { background: #d9f3e4; }
+
+
+/* ============ Quét cân bằng layout toàn cục ============ */
+
+/* KPI tiles: cao đều, label không xô lệch */
+.stats-row { grid-template-columns: repeat(auto-fit, minmax(172px, 1fr)); }
+.stat {
+  display: flex; flex-direction: column; justify-content: center;
+  min-height: 78px; gap: 2px;
+}
+.stat-l { line-height: 1.35; }
+
+/* Card bộ hồ sơ: cao đều nhau trong lưới */
+.dossier-grid { grid-auto-rows: 1fr; }
+.dossier-card { justify-content: flex-start; }
+.dossier-card .card-meta { margin-top: auto; padding-top: 12px; }
+
+/* Thẻ khách hàng: ô cao đều */
+.profile-grid { grid-auto-rows: 1fr; }
+
+/* Doc head: tên file co giãn có ellipsis, nút xóa sát phải, hàng đều */
+.doc-head { row-gap: 6px; }
+.doc-head .file {
+  flex: 1 1 140px; min-width: 0;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.doc-head .doc-trash { margin-left: auto; flex-shrink: 0; }
+
+/* Bảng trường: cột nhãn cố định tỷ lệ, hết cảnh nhãn gãy 3 dòng chen giá trị */
+.doc-card table { table-layout: fixed; }
+.doc-card td { vertical-align: top; }
+.doc-card td:nth-child(1) { width: 30%; color: var(--muted); font-weight: 500; }
+.doc-card td:nth-child(2) { width: 46%; }
+.doc-card td:nth-child(3) { width: 13%; }
+.doc-card td:nth-child(4) { width: 11%; }
+.doc-card td.value { word-break: break-word; }
+
+/* Detail bar: wrap có khoảng cách dòng */
+.detail-bar { row-gap: 8px; }
+
+/* Guide: nội dung gọn 940px căn giữa thay vì dàn kín khung wide */
+.guide-wrap { max-width: 940px; margin: 0 auto; }
+
+/* Spec table cột đều */
+.spec-table { table-layout: fixed; width: 100%; }
+.spec-table th:nth-child(1), .spec-table td:nth-child(1) { width: 20%; }
+.spec-table th:nth-child(2), .spec-table td:nth-child(2) { width: 26%; }
+.spec-table th:nth-child(3), .spec-table td:nth-child(3) { width: 18%; }
+.spec-table th:nth-child(4), .spec-table td:nth-child(4) { width: 13%; }
+.spec-table th:nth-child(5), .spec-table td:nth-child(5) { width: 13%; }
+.spec-table th:nth-child(6), .spec-table td:nth-child(6) { width: 10%; }
+
+/* Modal: khoảng cách chân đồng nhất */
+.modal-body { padding-bottom: 18px; }
+.modal-body .viewer-head { margin-bottom: 0; }
+.modal-actions { margin-top: 12px; }
+
+/* Landing: login card không dính mép trên mobile */
+@media (max-width: 900px) {
+  .landing { min-height: auto; padding-top: 24px; }
+  .landing-login { margin-bottom: 24px; }
+}

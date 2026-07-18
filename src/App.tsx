@@ -480,7 +480,7 @@ function Dossier({ id, onBack }: { id: string; onBack: () => void }) {
                   </span>
                 )}
                 <button
-                  className="ghost small icon-only"
+                  className="ghost small icon-only doc-trash"
                   title="Xóa chứng từ này"
                   onClick={async () => {
                     if (!confirm(`Xóa chứng từ "${doc.filename}"?`)) return
