@@ -47,6 +47,7 @@
 
 ## Q&A dự phòng (2')
 - **Sai thì sao?** → confidence thấp tự vào review queue; verify OCR độc lập là lớp tiếp theo (roadmap); mọi sửa tay có audit.
+- **AI đọc sai trên TẤT CẢ chứng từ thì sao?** → nhập tay giá trị chuẩn: nhấp đúp ô trong thẻ khách hàng (hoặc hàng "Cả hai đều sai?" trong modal so sánh) — áp cho mọi nguồn một lần, vẫn qua audit log. Người luôn là cấp phán quyết cuối.
 - **Hồ sơ nhiều người (đồng vay/bảo lãnh)?** → roadmap entity resolution: gom trường theo cụm tên+CCCD, profile riêng từng người.
 - **Tích hợp core Intellect 2010 kiểu gì?** → adapter layer trước core qua ESB/API trung gian, payload versioned — nguyên tắc: không đụng core.
 - **Sao không để AI tự đối chiếu?** → bộ phận bắt sai lệch mà dùng model thì chính nó có thể bịa; rule thuần + từ điển trường chuẩn (shared/fields.ts).

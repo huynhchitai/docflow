@@ -119,6 +119,8 @@ Chọn bất kỳ trường nào trong thẻ khách hàng hoặc bảng trườn
 
 Chọn ô **SAI LỆCH** trong thẻ khách hàng — hai bản scan gốc mở **cạnh nhau**, mỗi bên đánh dấu đúng vị trí giá trị mâu thuẫn. Dưới mỗi bản có nút **"Dùng giá trị này làm chuẩn"**: giá trị được chọn áp cho bản còn lại qua luồng hiệu chỉnh có ghi nhật ký, cảnh báo được tính lại ngay.
 
+Trường hợp **cả hai bản đều sai** so với bản gốc: nhập giá trị đúng vào hàng **"Cả hai đều sai?"** ngay dưới hai bản scan — hoặc **nhấp đúp** một ô bất kỳ trong thẻ khách hàng để nhập tay giá trị chuẩn, áp cho toàn bộ chứng từ nguồn cùng lúc. Mọi đường sửa đều đi qua nhật ký kiểm toán.
+
 ### Tự thêm trường dữ liệu (không cần dev)
 
 Chọn **Trường dữ liệu** → điền nhãn (key tự sinh), chọn kiểu chuẩn hóa, tick "Đối chiếu chéo"/"Lên thẻ khách" → **+ Thêm**. Trường mới có hiệu lực ngay với chứng từ upload sau đó — prompt AI tự cập nhật. Trường built-in bị khóa để bảo vệ quy ước chung.
