@@ -24,6 +24,42 @@ Cán bộ tín dụng nhận một bộ hồ sơ vay gồm nhiều chứng từ 
 
 Nguyên tắc thiết kế: **không bịa**. Trường nào AI không đọc được thì bỏ trống + cảnh báo, không đoán. Trường nào tin cậy thấp thì đánh vàng/đỏ chờ người duyệt.
 
+## Pipeline xử lý
+
+Triết lý phân vai: **AI đọc — code đối chiếu — người quyết định.**
+
+```mermaid
+flowchart LR
+    U[📄 Upload<br/>PDF/scan] --> S[(Supabase<br/>Storage)]
+    U --> CL[Phân loại chứng từ<br/>PyTorch router]
+    CL --> EX[Trích xuất<br/>Gemini · Vertex AI<br/>value + confidence + box_2d]
+    EX -->|tin cậy thấp /<br/>viết tay / mộc đè| ES[Escalate<br/>Gemini Pro]
+    ES --> EX
+    EX --> P[(Postgres<br/>fields + bbox + audit)]
+    P --> CC{Cross-check<br/>rule thuần TS<br/>theo từ điển trường chuẩn}
+    CC -->|khớp| OK[✅ Hoàn tất]
+    CC -->|lệch| AL[🚨 Cảnh báo CRITICAL<br/>+ so sánh 2 bản gốc]
+    AL --> HR[👩‍💼 Human review<br/>sửa tại chỗ + audit log]
+    HR --> OK
+    OK --> XP[🏦 Export<br/>core-banking JSON]
+```
+
+## Quy ước trường chuẩn (canonical fields)
+
+Để đối chiếu chéo được giữa các loại chứng từ, **cùng một thông tin phải mang cùng một key** — số CCCD luôn là `national_id` dù nó nằm trên đơn vay, hợp đồng hay điện SWIFT. Từ điển này là **một nguồn sự thật duy nhất** tại [`shared/fields.ts`](shared/fields.ts): prompt Gemini, cross-check engine và UI cùng import từ đây — thêm một trường mới chỉ sửa một chỗ.
+
+| Key chuẩn | Nghĩa | Chuẩn hóa khi so sánh | Đối chiếu chéo |
+|---|---|---|---|
+| `customer_name` | Họ và tên | UPPERCASE, bỏ dấu, gộp khoảng trắng | ✅ |
+| `national_id` | Số CCCD | chỉ giữ chữ số | ✅ |
+| `date_of_birth` | Ngày sinh | chỉ giữ chữ số | ✅ |
+| `loan_amount` | Số tiền vay | chỉ giữ chữ số | ✅ |
+| `loan_term` | Kỳ hạn | chỉ giữ chữ số | ✅ |
+| `interest_rate` | Lãi suất | chỉ giữ chữ số | ✅ |
+| `address` / `phone` / `occupation` / `income` / `collateral` | Thông tin bổ trợ | lowercase / chữ số | — (chỉ tổng hợp profile) |
+
+Model lỡ đặt tên khác (`cccd`, `so_giay_to`, `borrower`…) vẫn được map về key chuẩn qua bảng alias trong cùng file. Vì sao đối chiếu bằng code thuần thay vì hỏi AI: trọng tài phải deterministic và giải thích được từng cảnh báo — bộ phận phát hiện sai lệch mà cũng dùng model thì tự nó có thể sai lệch.
+
 ## Hướng dẫn sử dụng (2 phút)
 
 ### Đăng nhập

@@ -10,6 +10,7 @@ import {
   type Field,
 } from './api'
 import { DocViewer, type Highlight } from './DocViewer'
+import { CANONICAL_FIELDS, normalize } from '../shared/fields'
 import { ACCESS_KEY } from './api'
 
 function confidenceClass(c: number) {
@@ -19,15 +20,13 @@ function confidenceClass(c: number) {
 }
 
 // ============ Hồ sơ khách hàng tổng hợp ============
-const PROFILE_SPECS: { name: string; label: string; keys: RegExp; norm: (s: string) => string }[] = [
-  { name: 'customer_name', label: 'Họ và tên', keys: /customer_name|borrower|mortgagor_name|ten_khach/i, norm: (s) => s.toUpperCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/\s+/g, ' ').trim() },
-  { name: 'national_id', label: 'Số CCCD', keys: /national_id|cccd|id_number/i, norm: (s) => s.replace(/\D/g, '') },
-  { name: 'dob', label: 'Ngày sinh', keys: /dob|date_of_birth|ngay_sinh|birth/i, norm: (s) => s.replace(/\D/g, '') },
-  { name: 'address', label: 'Địa chỉ', keys: /address|dia_chi/i, norm: (s) => s.toLowerCase().replace(/\s+/g, ' ').trim() },
-  { name: 'phone', label: 'Điện thoại', keys: /phone|dien_thoai|mobile/i, norm: (s) => s.replace(/\D/g, '') },
-  { name: 'occupation', label: 'Nghề nghiệp', keys: /occupation|nghe_nghiep|job/i, norm: (s) => s.toLowerCase().trim() },
-  { name: 'income', label: 'Thu nhập', keys: /income|thu_nhap|salary/i, norm: (s) => s.replace(/\D/g, '') },
-]
+// Danh sách trường + chuẩn hóa lấy từ shared/fields.ts — cùng nguồn với prompt & cross-check
+const PROFILE_SPECS = CANONICAL_FIELDS.filter((f) => f.profile).map((f) => ({
+  name: f.key,
+  label: f.label,
+  keys: new RegExp(`^${f.key}$|` + f.aliases.source, 'i'),
+  norm: (s: string) => normalize(f.norm, s),
+}))
 
 type Hit = { field: Field; doc: Doc }
 

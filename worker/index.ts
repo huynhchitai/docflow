@@ -2,6 +2,7 @@ import { Hono } from 'hono'
 import { generateContent, type GeminiEnv } from './gemini'
 import { insert, select, update, storageUpload, storageDownload, type DbEnv } from './db'
 import { crosscheck, type FieldRow } from './crosscheck'
+import { CANONICAL_KEYS_FOR_PROMPT } from '../shared/fields'
 
 type Env = GeminiEnv & DbEnv & { ACCESS_CODE?: string }
 
@@ -49,7 +50,7 @@ Phân tích tài liệu đính kèm và trả về JSON đúng schema sau, khôn
   "doc_type_confidence": 0.0-1.0,
   "fields": [
     {
-      "key": "snake_case tên trường (dùng: customer_name, national_id, loan_amount, loan_term, interest_rate, collateral, ... khi phù hợp)",
+      "key": "snake_case. BẮT BUỘC dùng đúng key chuẩn khi thông tin tương ứng xuất hiện: ${CANONICAL_KEYS_FOR_PROMPT}. Thông tin ngoài danh sách thì tự đặt snake_case.",
       "label": "nhãn tiếng Việt",
       "value": "giá trị trích xuất, giữ nguyên định dạng gốc",
       "confidence": 0.0-1.0,
