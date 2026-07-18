@@ -3,7 +3,7 @@ import { generateContent, type GeminiEnv } from './gemini'
 import { insert, select, update, storageUpload, storageDownload, type DbEnv } from './db'
 import { crosscheck, type FieldRow } from './crosscheck'
 
-type Env = GeminiEnv & DbEnv
+type Env = GeminiEnv & DbEnv & { ACCESS_CODE?: string }
 
 type ExtractedField = {
   key: string
@@ -30,6 +30,17 @@ const app = new Hono<{ Bindings: Env }>()
 app.get('/api/health', (c) =>
   c.json({ ok: true, service: 'docflow', now: new Date().toISOString() }),
 )
+
+// Cổng access code: dữ liệu tín dụng không để URL public ai vào cũng xem được.
+// Mã chia sẻ cho giám khảo qua form CP2 (mục credentials — chỉ organizer + judge thấy).
+app.use('/api/*', async (c, next) => {
+  if (c.req.path === '/api/health') return next()
+  const code = c.env.ACCESS_CODE
+  if (code && c.req.header('x-access-code') !== code) {
+    return c.json({ error: 'UNAUTHORIZED' }, 401)
+  }
+  return next()
+})
 
 const EXTRACTION_PROMPT = `Bạn là hệ thống IDP (Intelligent Document Processing) cho ngân hàng Việt Nam.
 Phân tích tài liệu đính kèm và trả về JSON đúng schema sau, không thêm chữ nào khác:

@@ -64,35 +64,47 @@ export const STATE_LABELS: Record<string, string> = {
   exported: 'Đã xuất core',
 }
 
+export const ACCESS_KEY = 'df_access_code'
+
+export function accessHeaders(): Record<string, string> {
+  const code = localStorage.getItem(ACCESS_KEY)
+  return code ? { 'x-access-code': code } : {}
+}
+
 async function j<T>(resp: Response): Promise<T> {
+  if (resp.status === 401) {
+    localStorage.removeItem(ACCESS_KEY)
+    location.reload()
+    throw new Error('UNAUTHORIZED')
+  }
   const data = await resp.json()
   if (!resp.ok) throw new Error((data as { error?: string }).error ?? `HTTP ${resp.status}`)
   return data as T
 }
 
 export const api = {
-  listDossiers: () => fetch('/api/dossiers').then((r) => j<DossierSummary[]>(r)),
-  getDossier: (id: string) => fetch(`/api/dossiers/${id}`).then((r) => j<DossierDetail>(r)),
+  listDossiers: () => fetch('/api/dossiers', { headers: accessHeaders() }).then((r) => j<DossierSummary[]>(r)),
+  getDossier: (id: string) => fetch(`/api/dossiers/${id}`, { headers: accessHeaders() }).then((r) => j<DossierDetail>(r)),
   createDossier: (name: string) =>
     fetch('/api/dossiers', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json', ...accessHeaders() },
       body: JSON.stringify({ name }),
     }).then((r) => j<{ id: string }>(r)),
   uploadFiles: (id: string, files: File[]) => {
     const form = new FormData()
     for (const f of files) form.append('files', f)
-    return fetch(`/api/dossiers/${id}/files`, { method: 'POST', body: form }).then((r) =>
+    return fetch(`/api/dossiers/${id}/files`, { method: 'POST', body: form, headers: accessHeaders() }).then((r) =>
       j<{ processed: object[]; alerts: Alert[] }>(r),
     )
   },
   editField: (id: string, value: string) =>
     fetch(`/api/fields/${id}`, {
       method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json', ...accessHeaders() },
       body: JSON.stringify({ value }),
     }).then((r) => j<Field>(r)),
   exportDossier: (id: string) =>
-    fetch(`/api/dossiers/${id}/export`, { method: 'POST' }).then((r) => j<object>(r)),
+    fetch(`/api/dossiers/${id}/export`, { method: 'POST', headers: accessHeaders() }).then((r) => j<object>(r)),
   fileUrl: (docId: string) => `/api/documents/${docId}/file`,
 }

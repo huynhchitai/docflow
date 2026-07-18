@@ -657,3 +657,43 @@ footer {
   padding: 2px 8px;
   border-radius: 6px 6px 6px var(--r-sq);
 }
+
+/* ---------- Cổng truy cập ---------- */
+.gate {
+  max-width: 420px;
+  margin: 16vh auto 0;
+  padding: 0 20px;
+  text-align: center;
+}
+
+.gate .big-mark {
+  width: 56px;
+  height: 56px;
+  margin: 0 auto 14px;
+  display: block;
+}
+
+.gate h1 {
+  font-size: 2rem;
+  font-weight: 800;
+  margin: 0;
+}
+
+.gate h1 span { color: var(--cam-text); }
+
+.gate .tagline { margin-bottom: 18px; }
+
+.gate-form { display: flex; gap: 10px; }
+
+.gate-form input {
+  flex: 1;
+  padding: 12px 16px;
+  border-radius: var(--r) var(--r) var(--r-sq) var(--r);
+  border: 1px solid var(--line);
+  background: var(--navy-800);
+  color: var(--text);
+  font-size: 1rem;
+  font-family: var(--mono);
+  letter-spacing: 2px;
+  text-align: center;
+}

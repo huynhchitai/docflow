@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import * as pdfjs from 'pdfjs-dist'
 import workerUrl from 'pdfjs-dist/build/pdf.worker.min.mjs?url'
-import { api } from './api'
+import { api, accessHeaders } from './api'
 
 pdfjs.GlobalWorkerOptions.workerSrc = workerUrl
 
@@ -20,7 +20,7 @@ function loadFile(docId: string): Promise<ArrayBuffer> {
   if (!blobCache.has(docId)) {
     blobCache.set(
       docId,
-      fetch(api.fileUrl(docId)).then((r) => {
+      fetch(api.fileUrl(docId), { headers: accessHeaders() }).then((r) => {
         if (!r.ok) throw new Error(`Không tải được file (${r.status})`)
         return r.arrayBuffer()
       }),

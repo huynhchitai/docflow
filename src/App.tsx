@@ -10,6 +10,7 @@ import {
   type Field,
 } from './api'
 import { DocViewer, type Highlight } from './DocViewer'
+import { ACCESS_KEY } from './api'
 
 function confidenceClass(c: number) {
   if (c >= 0.9) return 'conf high'
@@ -382,8 +383,52 @@ function Dossier({ id, onBack }: { id: string; onBack: () => void }) {
   )
 }
 
+function AccessGate({ onDone }: { onDone: () => void }) {
+  const [code, setCode] = useState('')
+  const [checking, setChecking] = useState(false)
+  const [bad, setBad] = useState(false)
+  const submit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!code.trim() || checking) return
+    setChecking(true)
+    setBad(false)
+    const resp = await fetch('/api/dossiers', { headers: { 'x-access-code': code.trim() } })
+    setChecking(false)
+    if (resp.ok) {
+      localStorage.setItem(ACCESS_KEY, code.trim())
+      onDone()
+    } else {
+      setBad(true)
+    }
+  }
+  return (
+    <div className="gate">
+      <div className="mark big-mark" aria-hidden="true" />
+      <h1>
+        Doc<span>Flow</span>
+      </h1>
+      <p className="tagline">Khu vực nghiệp vụ — nhập mã truy cập được cấp để tiếp tục.</p>
+      <form className="gate-form" onSubmit={submit}>
+        <input
+          type="password"
+          value={code}
+          autoFocus
+          placeholder="Mã truy cập"
+          onChange={(e) => setCode(e.target.value)}
+        />
+        <button type="submit" disabled={checking}>
+          {checking ? 'Đang kiểm tra…' : 'Vào hệ thống'}
+        </button>
+      </form>
+      {bad && <div className="banner error">⚠️ Mã không đúng — thử lại hoặc liên hệ team megalondon.</div>}
+    </div>
+  )
+}
+
 function App() {
+  const [authed, setAuthed] = useState(() => Boolean(localStorage.getItem(ACCESS_KEY)))
   const [view, setView] = useState<{ page: 'list' } | { page: 'dossier'; id: string }>({ page: 'list' })
+  if (!authed) return <AccessGate onDone={() => setAuthed(true)} />
   return (
     <main className="shell wide">
       <Header />
