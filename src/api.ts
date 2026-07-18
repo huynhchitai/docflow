@@ -67,7 +67,7 @@ export const STATE_LABELS: Record<string, string> = {
   extracting: 'Đang trích xuất',
   needs_review: 'Cần kiểm tra',
   done: 'Hoàn tất',
-  exported: 'Đã xuất core',
+  exported: 'Đã chuyển core banking',
 }
 
 export const ACCESS_KEY = 'df_access_code'

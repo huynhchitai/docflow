@@ -378,7 +378,7 @@ function Dossier({ id, onBack }: { id: string; onBack: () => void }) {
         >
           <Trash2 size={15} /> Xóa
         </button>
-        <button onClick={doExport} disabled={!d.documents.length}><Landmark size={15} /> Export core-banking</button>
+        <button onClick={doExport} disabled={!d.documents.length}><Landmark size={15} /> Xuất dữ liệu core banking</button>
       </div>
 
       {(d.customer_name || d.note) && (

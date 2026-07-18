@@ -50,8 +50,8 @@ const STEPS = [
   },
   {
     icon: Landmark,
-    title: '6 · Export core-banking',
-    body: 'Một nút — nhận payload JSON chuẩn CIF (Customer Information File) kèm cash-flow, nhắm core Intellect của SHB qua adapter. Không đụng core.',
+    title: '6 · Xuất dữ liệu core banking',
+    body: 'Một thao tác — nhận payload JSON chuẩn CIF (Customer Information File) kèm dữ liệu dòng tiền, sẵn sàng chuyển vào core Intellect của SHB qua tầng adapter. Không can thiệp trực tiếp vào core.',
     tip: 'Bộ phận nghiệp vụ tự cấu hình trường mới trong mục Trường dữ liệu — không phụ thuộc đội phát triển.',
   },
 ]

@@ -20,7 +20,7 @@ Cán bộ tín dụng nhận một bộ hồ sơ vay gồm nhiều chứng từ 
 3. **Mọi con số đều truy vết được** — click một trường, bản scan gốc mở đúng vị trí, khoanh cam từng dòng
 4. **Tự đối chiếu chéo giữa các chứng từ** — CCCD/số tiền/kỳ hạn lệch nhau là báo đỏ CRITICAL; click ô lệch mở **hai bản gốc cạnh nhau** để đối chất; tên khách khai báo lúc tạo bộ cũng được đối chiếu với tên trên giấy
 5. **Người duyệt sửa tại chỗ** — double-click giá trị để sửa, mọi thay đổi ghi vào audit log; trường tin cậy thấp tự đánh vàng/đỏ
-6. **Bấm Export core-banking** — payload nói đúng ngôn ngữ hệ thống SHB: khối **CIF** (Customer Information File), cash-flow, metadata tích hợp nhắm core **Intellect (SOA/ESB)** qua adapter — không đụng core
+6. **Xuất dữ liệu core banking** — payload nói đúng ngôn ngữ hệ thống SHB: khối **CIF** (Customer Information File), cash-flow, metadata tích hợp nhắm core **Intellect (SOA/ESB)** qua adapter — không đụng core
 7. **Nghiệp vụ tự cấu hình trường mới** ngay trên UI (⚙️ Trường dữ liệu) — thêm "Mã số thuế" trong 10 giây, có hiệu lực tức thì với prompt AI, không cần deploy
 
 Nguyên tắc thiết kế: **không suy diễn**. Trường nào AI không đọc được thì bỏ trống + cảnh báo, không đoán. Trường nào tin cậy thấp thì đánh vàng/đỏ chờ người duyệt.
@@ -106,7 +106,7 @@ Bấm **⚙️ Trường dữ liệu** → điền nhãn (key tự sinh), chọn
 ### Duyệt và xuất
 
 - Sửa giá trị sai: **double-click** vào giá trị → gõ lại → Enter. Trường đã sửa hiện ✏️ và được ưu tiên khi tổng hợp. Mọi lần sửa ghi vào audit log (ai, lúc nào, giá trị cũ → mới).
-- Bấm **🏦 Export core-banking** để nhận payload JSON (`shb.core-banking.loan-intake.v1`) gồm thông tin khách hàng, khoản vay, danh mục chứng từ và trạng thái review.
+- Chọn **Xuất dữ liệu core banking** để nhận payload JSON (`shb.core-banking.loan-intake.v1`) gồm thông tin khách hàng, khoản vay, danh mục chứng từ và trạng thái review.
 
 ## Kiến trúc
 
