@@ -197,5 +197,5 @@ docker build --platform linux/amd64 -t asia-southeast1-docker.pkg.dev/project-9d
 1. **AI-LOG.md cập nhật mỗi phiên** — bắt buộc cho Final, session Claude Code là bằng chứng.
 2. Code mới 100% trong cửa sổ 48h (17/07 14:00 → 19/07 11:00).
 3. Không nhét logo SHB thật — chỉ lấy cảm hứng palette.
-4. Cháy giờ thì cắt theo thứ tự ngược mục 5 ROADMAP.md (giữ extraction + viewer đến chết).
+4. Cháy giờ thì cắt theo thứ tự ngược mục 5 docs/ROADMAP.md (giữ extraction + viewer đến chết).
 5. Dữ liệu demo = hư cấu có watermark, không PII thật.

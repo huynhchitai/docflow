@@ -25,7 +25,7 @@
 - Deploy Cloudflare Workers: https://docflow.huynhchitai.com — smoke test OK.
 - Sinh bộ demo data hư cấu bằng script Python (fpdf2): đơn vay, BCTC, hợp đồng thế chấp
   (cài lỗi CCCD lệch cho demo cross-check), điện SWIFT MT103.
-- Viết ROADMAP.md (kiến trúc đích + phân công 48h).
+- Viết docs/ROADMAP.md (kiến trúc đích + phân công 48h).
 - Restyle UI theo bộ nhận diện SHB 2026 (cam + Midnight Navy, motif tròn-vuông).
 
 ### Phiên 2 — Fri 17/07, ~17:30–19:15 ICT (Claude Code)
@@ -63,7 +63,7 @@
 - Trang ⚙️ Trường dữ liệu (thêm/bớt trường custom, hiệu lực ngay), dashboard KPI (/api/stats).
 - Modal so sánh 2 nguồn cạnh nhau khi giá trị lệch. Đo extract_ms. Chùm bbox nhiều dòng.
 - 5 bộ hồ sơ demo (generator + upload prod), fix normalize Đ→D (SWIFT không dấu),
-  endpoint recheck, nút xóa bộ/chứng từ, bộ icon Lucide thay emoji, BACKLOG.md audit giải.
+  endpoint recheck, nút xóa bộ/chứng từ, bộ icon Lucide thay emoji, docs/BACKLOG.md audit giải.
 
 ### Phiên 6 — Sat 18/07 trưa (Claude Code)
 - Nghiên cứu core SHB (Intellect, SOA/ESB) → export payload nói ngôn ngữ CIF + integration metadata.
@@ -74,6 +74,6 @@
   SONG SONG (n×26s → ~26s), lưu classifier_type/conf (migration 0004), chip 🔥 PyTorch trên UI.
 - Test prod: router 4/4 đúng 99–100% conf, 120–293ms/lượt; E2E router+Gemini khớp nhau.
 - Bench accuracy trích xuất: 95% field đúng (loại flake), p50 26s — metrics/ACCURACY.md.
-- Dossier mentor SHB (MENTORS-SHB.md), PITCH.md 7 màn, scan giả lập, cash_flow fields.
+- Dossier mentor SHB (docs/MENTORS-SHB.md), docs/PITCH.md 7 màn, scan giả lập, cash_flow fields.
 
 <!-- Thêm phiên mới theo format trên. Mỗi phiên: thời gian, việc AI làm, file liên quan. -->

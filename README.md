@@ -140,6 +140,21 @@ pnpm build && npx wrangler deploy   # deploy Cloudflare
 
 Cần Node 22+. Schema DB: chạy lần lượt các file trong [`supabase/migrations/`](supabase/migrations/) bằng Supabase SQL Editor.
 
+## Cấu trúc dự án
+
+```
+src/            React SPA (App, Guide, DocViewer, api client)
+worker/         Cloudflare Worker — orchestrator, pipeline, cross-check, API
+shared/         Từ điển trường chuẩn — một nguồn sự thật cho prompt + rule + UI
+gcp-proxy/      Cloud Run: Vertex AI proxy (ADC) + PyTorch router (model.pt)
+training/       Sinh dataset + fine-tune ResNet18 (dataset tái tạo bằng make_dataset.py)
+supabase/       Migrations SQL (4 file, chạy theo thứ tự)
+demo-data/      Bộ hồ sơ mẫu hư cấu + bản scan giả lập + generator
+metrics/        Benchmark accuracy có ground truth + báo cáo
+docs/           PITCH · ROADMAP · BACKLOG · MENTORS-SHB (tài liệu vận hành đội)
+.claude/        ARCHITECTURE.md — sơ đồ mermaid, data model, kịch bản demo
+```
+
 ## Tuân thủ 100% AI-native
 
 Toàn bộ code sinh bởi AI trong cửa sổ 48h của hackathon. Nhật ký cộng tác AI đầy đủ theo từng phiên: [`AI-LOG.md`](AI-LOG.md) (kèm session files Claude Code nộp trong final submission).
