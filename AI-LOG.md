@@ -101,4 +101,11 @@
   → xác nhận barem 6 tiêu chí 20/20/20/15/15/10; README bổ sung mục An toàn AI & grounding,
   Mô hình kinh doanh & lộ trình pilot, bảng đối chiếu tiêu chí chấm điểm.
 
+### Phiên 9 — Sun 19/07 sáng (Claude Code)
+- Tự chấm điểm theo barem 6 tiêu chí → vá 3 chỗ chảy điểm (test+CI, p50 minh bạch,
+  chống prompt injection) trong phiên 8; sáng nay soát lại deck bằng script đo chữ
+  (PIL đo bề rộng glyph từng run): sửa title slide 3 tràn 2 dòng, siết slide kiến trúc.
+- Đóng gói final submission: deck + video thuyết minh + AI-LOG + ZIP session files
+  Claude Code (demo/final-submission/, kèm NOP-FINAL.md hướng dẫn nộp).
+
 <!-- Thêm phiên mới theo format trên. Mỗi phiên: thời gian, việc AI làm, file liên quan. -->
